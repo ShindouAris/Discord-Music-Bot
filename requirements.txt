@@ -1,0 +1,8 @@
+disnake
+disnake[voice]
+colorama
+python-dotenv
+psutil
+humanize
+aiohttp
+mafic
