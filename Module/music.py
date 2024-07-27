@@ -3,15 +3,16 @@ from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option
 import disnake
 from mafic import Track, Playlist, TrackEndEvent, EndReason
-from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE
+from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction
 from musicCore.check import check_voice, has_player
-from utils.conv import trim_text, time_format
+from utils.conv import trim_text, time_format, string_to_seconds, percentage
+from utils.error import GenericError
 
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot: ClientUser = bot
 
-    # @check_voice()
+    @check_voice()
     @commands.slash_command(name="play", description="Chơi một bản nhạc", options=[
         Option(name="search",
                description="Tìm kiếm bài hát bằng tên hoặc url",
@@ -23,7 +24,7 @@ class Music(commands.Cog):
         begined = True
 
         if player is None:
-            player: MusicPlayer = await inter.author.voice.channel.connect(cls=MusicPlayer)
+            player: MusicPlayer = await inter.author.voice.channel.connect(cls=MusicPlayer, self_deaf=True)
             begined = False
 
         player.notification_channel = inter.channel
@@ -93,14 +94,17 @@ class Music(commands.Cog):
     async def stop(self, ctx: ApplicationCommandInteraction):
         await ctx.response.defer()
         player: MusicPlayer = ctx.author.guild.voice_client
-        await player.stop()
-        await player.disconnect(force=True)
+        try:
+            await player.stop()
+            await player.disconnect(force=True)
+        except AttributeError:
+            pass
         await ctx.edit_original_response(
-            embed=Embed(
-                title="⏹️ Đã dừng phát nhạc",
-                color=0x00FFFF
+                embed=Embed(
+                    title="⏹️ Đã dừng phát nhạc",
+                    color=0x00FFFF
+                )
             )
-        )
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.command(name="pause", description="Tạm dừng bài hát")
@@ -111,11 +115,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await player.resume()
-            await inter.send("Đã tiếp tục phát")
-        else:
-            await player.pause()
-            await inter.send(f"Đã tạm dừng bài hát")
+            await inter.send("Trình phát đã bị tạm dừng rồi")
+            return
+        await player.pause()
+        await inter.send(f"Đã tạm dừng bài hát")
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="pause", description="Tạm dừng bài hát")
@@ -127,11 +130,40 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await player.resume()
-            await inter.edit_original_response("Đã tiếp tục phát")
-        else:
-            await player.pause()
-            await inter.edit_original_response(f"Đã tạm dừng bài hát")
+            await inter.edit_original_response("Trình phát đã bị tạm dừng rồi")
+            return
+        await player.pause()
+        await inter.edit_original_response(f"Đã tạm dừng bài hát")
+
+
+    @commands.cooldown(3, 10, commands.BucketType.guild)
+    @commands.command(name="resumme", description="Tiếp tục phát bài hát")
+    @commands.guild_only()
+    @has_player()
+    @check_voice()
+    async def resume_legacy(self, inter: ApplicationCommandInteraction):
+        player: MusicPlayer = inter.author.guild.voice_client
+        player.NotiChannel = inter.channel
+        if not player.paused:
+            await inter.send("Trình phát không bị tạm dừng")
+            return
+        await player.resume()
+        await inter.send("Đã tiếp tục phát")
+
+    @commands.cooldown(3, 10, commands.BucketType.guild)
+    @commands.slash_command(name="resume", description="Tiếp tục phát bài hát")
+    @commands.guild_only()
+    @has_player()
+    @check_voice()
+    async def resume(self, inter: ApplicationCommandInteraction):
+        await inter.response.defer()
+        player: MusicPlayer = inter.author.guild.voice_client
+        player.NotiChannel = inter.channel
+        if not player.paused:
+            await inter.edit_original_response("Trình phát không bị tạm dừng")
+            return
+        await player.resume()
+        await inter.edit_original_response("Đã tiếp tục phát")
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.command(name="next", description="Phát bài hát tiếp theo")
@@ -158,6 +190,8 @@ class Music(commands.Cog):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
+        if not player.queue.next_track:
+            return await inter.edit_original_response("Không có bài hát nào đang trong hàng đợi")
         await player.playnext()
         await inter.edit_original_response(
             embed=Embed(
@@ -275,7 +309,7 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.queue.always_connect = not player.queue.always_connect
         await inter.edit_original_response(embed=disnake.Embed(
-            title="✅ Đã thay đổi chế độ phát không dừng",
+            title=f"✅ Đã {'bật' if player.queue.always_connect else 'tắt'} chế độ phát không dừng",
             color=0x00FF00
         ))
 
@@ -310,6 +344,129 @@ class Music(commands.Cog):
             title="✅ Đã thay đổi chế độ phát liên tục",
             color=0x00FF00
         ))
+
+    @commands.cooldown(1, 10, commands.BucketType.guild)
+    @has_player()
+    @check_voice()
+    @commands.command(name="volume", description="Điều chỉnh âm lượng", aliases=["vol", "v"])
+    async def volume_legacy(self, inter: ApplicationCommandInteraction, volume: int = 100):
+        if not 4 < volume < 150:
+            await inter.send("Chọn từ **5** đến **150**")
+            return
+
+        await self.volume.callback(self=self, inter=inter, volume=int(volume))
+
+    @commands.cooldown(1, 10, commands.BucketType.guild)
+    @has_player()
+    @check_voice()
+    @commands.slash_command(name="volume", description="Điều chỉnh âm lượng bài hát", options=[Option(name="volume", description="Chọn từ 5 đến 150",min_value=5.0, max_value=150.0)])
+    async def volume(self, inter: ApplicationCommandInteraction, volume: int = None):
+        player: MusicPlayer = inter.author.guild.voice_client
+        embed = Embed()
+
+        if volume is None:
+
+            view = VolumeInteraction(inter)
+
+            embed.description = "**Chọn mức âm lượng bên dưới**"
+            await inter.send(embed=embed, view=view)
+            await view.wait()
+            if view.volume is None:
+                return
+            volume = view.volume
+
+        elif not 4 < volume < 100:
+            await inter.send("Chọn từ **5** đến **150**")
+            return
+
+        await player.set_volume(volume)
+        await inter.edit_original_response(f"Đã điểu chỉnh âm lượng thành {volume}%")
+
+    @commands.cooldown(1, 30, commands.BucketType.guild)
+    @has_player()
+    @check_voice()
+    @commands.slash_command(name="seek", description="Tua bài hát đến một đoạn cụ thể")
+    async def seek(
+            self,
+            inter: ApplicationCommandInteraction,
+            position: str = commands.Param(name="time", description="Thời gian để tiến/trở lại (ví dụ: 1:45 / 40 / 0:30)")
+    ):
+        player: MusicPlayer = inter.author.guild.voice_client
+        if player.queue.is_playing.stream:
+            raise GenericError("Bạn không thể làm điều này trong một buổi phát trực tiếp")
+        if not player.queue.is_playing.seekable:
+            raise GenericError("Bài hát này không thể tua")
+
+        await inter.response.defer()
+
+        position = position.split(" | ")[0].replace(" ", ":")
+
+        seconds = string_to_seconds(position)
+
+        if seconds is None:
+            raise GenericError("**Giá trị không hợp lệ!, Sử dụng giây (1 hoặc 2 chữ số) hoặc ở định dạng (phút):(giây)**")
+
+        milliseconds = seconds * 1000
+
+        if milliseconds < 0: milliseconds = 0
+
+        if milliseconds > player.position:
+
+            emoji = "⏩"
+
+            txt = [
+                f"đã tua thời gian của bài hát đến: `{time_format(milliseconds)}`",
+                f"{emoji} **⠂{inter.author.mention} tua thời gian của bài hát đến:** `{time_format(milliseconds)}`"
+            ]
+
+        else:
+
+            emoji = "⏪"
+
+            txt = [
+                f" đã tua thời gian của bài hát trở lại: `{time_format(milliseconds)}`",
+                f"{emoji} **⠂{inter.author.mention} đưa thời gian của bài hát trở lại:** `{time_format(milliseconds)}`"
+            ]
+
+        await player.seek(milliseconds)
+
+        if player.paused:
+            await player.resume()
+
+        await inter.edit_original_response(embed=disnake.Embed(description=txt))
+
+    @seek.autocomplete("time")
+    async def seek_successtion(self, inter: disnake.Interaction, query: str):
+        try:
+            if not inter.author.voice:
+                return
+        except AttributeError:
+            return
+
+        if query:
+            return [time_format(string_to_seconds(query)*1000)]
+
+        try:
+            player: MusicPlayer = inter.author.guild.voice_client
+        except AttributeError:
+            return
+
+        if not player.queue.is_playing or player.queue.is_playing.stream or not player.queue.is_playing.seekable:
+            return
+
+        seeks = []
+
+        if player.queue.is_playing.length > 90000:
+            times = [int(n * 0.5 * 10) for n in range(20)]
+        else:
+            times = [int(n * 1 * 10) for n in range(20)]
+
+        for p in times:
+            percent = percentage(p, player.queue.is_playing.length)
+            seeks.append(f'{time_format(percent)} | {p}%')
+
+        return seeks
+
 
     @commands.Cog.listener()
     async def on_track_end(self, event: TrackEndEvent[MusicPlayer]):

@@ -1,3 +1,4 @@
+import datetime
 from typing import Union
 
 replaces = [
@@ -65,6 +66,26 @@ def time_format(milliseconds: Union[int, float], use_names: bool = False) -> str
             strings = (f"{days} ngày" if days > 1 else f"{days} ngày") + (f", {strings}" if strings != "00:00" else "")
 
     return strings
+
+
+time_names = ["seconds", "minutes", "hours"]
+
+def string_to_seconds(time):
+    try:
+
+        times = reversed([i for i in time.replace(" ", ":").split(':') if i.isdigit()])
+        time_dict = {}
+
+        for n, t in enumerate(times):
+            time_dict[time_names[n]] = int(t)
+
+        return datetime.timedelta(**time_dict).total_seconds()
+
+    except:
+        return
+
+def percentage(part, whole):
+    return int((part * whole) / 100.0)
 
 perms_translations = {
     "add_reactions": "Thêm phản ứng",

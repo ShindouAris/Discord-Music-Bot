@@ -249,3 +249,32 @@ class QueueInterface(ui.View):
         self.update_pages()
         self.update_embed()
         await interaction.response.edit_message(embed=self.embed, view=self)
+
+class VolumeInteraction(ui.View):
+
+    def __init__(self, inter):
+        self.inter = inter
+        self.volume = None
+        super().__init__(timeout=30)
+        self.process_buttons()
+
+    def process_buttons(self):
+
+        opts = []
+
+        for l in [5, 20, 40, 60, 80, 100, 120, 150]:
+
+            if l > 100:
+                description = "Âm lượng quá 100% có thể nghe rất bất thường."
+            else:
+                description = None
+            opts.append(SelectOption(label=f"{l}%", value=f"vol_{l}", description=description))
+
+        select = ui.Select(placeholder='Âm lượng:', options=opts)
+        select.callback = self.callback
+        self.add_item(select)
+
+    async def callback(self, interaction: MessageInteraction):
+        await interaction.response.edit_message(content=f"Âm lượng đã thay đổi!",embed=None, view=None)
+        self.volume = int(interaction.data.values[0][4:])
+        self.stop()
