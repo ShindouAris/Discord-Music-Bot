@@ -114,10 +114,12 @@ class ClientUser(commands.AutoShardedBot):
                 try:
                     self.reload_extension(module_filename)
                     logger.error(f'{Fore.GREEN} [ ✅ ] Module {file} Đã tải lên thành công{Style.RESET_ALL}')
+                    load_status["reloaded"].append(module_filename)
                 except (commands.ExtensionAlreadyLoaded, commands.ExtensionNotLoaded):
                     try:
                         self.load_extension(module_filename)
                         logger.info(f'{Fore.GREEN} [ ✅ ] Module {file} Đã tải lên thành công{Style.RESET_ALL}')
+                        load_status["reloaded"].append(module_filename)
                     except Exception as e:
                         logger.error(f"[❌] Đã có lỗi xảy ra với Module {file}: Lỗi: {repr(e)}")
                     continue
