@@ -24,7 +24,7 @@ class Music(commands.Cog):
         player: MusicPlayer = ctx.author.guild.voice_client
         loaded = True
 
-        if not player:
+        if player is None:
             try:
                 player: MusicPlayer = await ctx.author.voice.channel.connect(cls=MusicPlayer)
                 loaded = False
