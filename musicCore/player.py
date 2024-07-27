@@ -108,7 +108,7 @@ class MusicPlayer(Player[ClientUser]):
             return
         await self.play(track, replace=True)
         if self.channel is not None:
-            await self.sendMessage(embed=Embed(description=f"Đang phát {track.title} | {time_format(track.length)}"))
+            await self.sendMessage(embed=Embed(description=f" {track.source.capitalize()} | {track.title} | {time_format(track.length)}").set_thumbnail(url=track.artwork_url))
 
 
 
