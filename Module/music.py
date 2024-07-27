@@ -26,7 +26,7 @@ class Music(commands.Cog):
 
         if not player:
             try:
-                player = await ctx.author.voice.channel.connect(cls=MusicPlayer, timeout=5)
+                player = await ctx.author.voice.channel.connect(cls=MusicPlayer, timeout=120)
                 loaded = False
             except asyncio.TimeoutError:
                 return await ctx.edit_original_response("Đã xảy ra sự cố khi kết nối vào kênh thoại của bạn")
