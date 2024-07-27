@@ -24,7 +24,7 @@ class Music(commands.Cog):
         begined = True
 
         if player is None:
-            player: MusicPlayer = await inter.author.voice.channel.connect(cls=MusicPlayer, self_deaf=True)
+            player: MusicPlayer = await inter.author.voice.channel.connect(cls=MusicPlayer)
             begined = False
 
         player.notification_channel = inter.channel
