@@ -429,7 +429,7 @@ class Music(commands.Cog):
                 f"{emoji} **⠂{inter.author.mention} đưa thời gian của bài hát trở lại:** `{time_format(milliseconds)}`"
             ]
 
-        await player.seek(milliseconds)
+        await player.seek(int(milliseconds))
 
         if player.paused:
             await player.resume()
