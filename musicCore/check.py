@@ -3,6 +3,8 @@ from __future__ import annotations
 from disnake.ext import commands
 from utils.error import NoVoice, MissingVoicePermissions, DiffVoice, NoPlayer
 from .player import MusicPlayer
+
+
 def check_voice():
 
     async def predicate(inter):
@@ -10,7 +12,7 @@ def check_voice():
         guild = inter.guild
 
         try:
-            if not inter.author.voice:
+            if inter.author.id not in inter.author.voice.channel.voice_states:
                 raise NoVoice()
         except AttributeError:
             pass
