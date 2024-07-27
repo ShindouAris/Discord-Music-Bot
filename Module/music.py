@@ -18,7 +18,7 @@ class Music(commands.Cog):
                description="Tìm kiếm bài hát bằng tên hoặc url",
                required=True)])
     async def play(self, inter: disnake.ApplicationCommandInteraction, search: str):
-        await inter.response.defer()
+        await inter.response.defer(ephemeral=True)
 
         player: MusicPlayer = inter.author.guild.voice_client
         begined = True
@@ -84,7 +84,7 @@ class Music(commands.Cog):
             embed=Embed(
                 title="⏹️ Đã dừng phát nhạc",
                 color=0x00FFFF
-            )
+            ), flags=MessageFlags(suppress_notifications=True)
         )
 
     @commands.cooldown(1, 10, commands.BucketType.guild)
@@ -104,7 +104,7 @@ class Music(commands.Cog):
                 embed=Embed(
                     title="⏹️ Đã dừng phát nhạc",
                     color=0x00FFFF
-                )
+                ), flags=MessageFlags(suppress_notifications=True)
             )
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
@@ -116,10 +116,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await inter.send("@silent Trình phát đã bị tạm dừng rồi")
+            await inter.send("Trình phát đã bị tạm dừng rồi", flags=MessageFlags(suppress_notifications=True))
             return
         await player.pause()
-        await inter.send(f"@silent Đã tạm dừng bài hát")
+        await inter.send(f"Đã tạm dừng bài hát", flags=MessageFlags(suppress_notifications=True))
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="pause", description="Tạm dừng bài hát")
@@ -131,10 +131,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await inter.edit_original_response("@silent Trình phát đã bị tạm dừng rồi")
+            await inter.edit_original_response("Trình phát đã bị tạm dừng rồi", flags=MessageFlags(suppress_notifications=True))
             return
         await player.pause()
-        await inter.edit_original_response(f"@silent Đã tạm dừng bài hát")
+        await inter.edit_original_response(f"Đã tạm dừng bài hát", flags=MessageFlags(suppress_notifications=True))
 
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
