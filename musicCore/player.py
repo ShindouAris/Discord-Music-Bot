@@ -77,6 +77,7 @@ class MusicPlayer(Player[ClientUser]):
         self.player_channel = channel
         self.NotiChannel: Optional[Messageable] = None
         self.message: Optional[Message] = None
+        self.nightCore = False
 
     async def sendMessage(self, **kwargs):
         try:
@@ -107,7 +108,7 @@ class MusicPlayer(Player[ClientUser]):
             await self.disconnect(force=True)
             return
         await self.play(track, replace=True)
-        if self.channel is not None:
+        if self.channel is not None and self.queue.loop != LoopMODE.SONG:
             await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`", color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}", icon_url=music_source_image(track.source.lower())))
 
 class QueueInterface(ui.View):

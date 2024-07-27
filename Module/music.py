@@ -2,7 +2,7 @@ from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags
 import disnake
-from mafic import Track, Playlist, TrackEndEvent, EndReason
+from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter
 from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction
 from musicCore.check import check_voice, has_player
 from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image
@@ -466,6 +466,28 @@ class Music(commands.Cog):
             seeks.append(f'{time_format(percent)} | {p}%')
 
         return seeks
+
+    @commands.slash_command(name="nightcore", description="Phát bài hát bằng filter nightcore")
+    @commands.guild_only()
+    @has_player()
+    @check_voice()
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    async def nightcore(self, inter: disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
+        player: MusicPlayer = inter.author.guild.voice_client
+        player.nightCore = not player.nightCore
+
+        if player.nightCore:
+            await player.remove_filter(label="nightcore")
+            txt = "tắt"
+        else:
+            nightCore_EQ_timeScale = Timescale(speed=1.1, pitch=1.2)
+            nightCore_filter_timeScale = Filter(timescale=nightCore_EQ_timeScale)
+            await player.add_filter(nightCore_filter_timeScale, label="nightcore")
+            txt = "bật"
+
+        await inter.edit_original_response(embed=disnake.Embed(description=f"Đã {txt} tính năng nightcore\n -# Tính năng này để tăng âm sắc và tốc độ cho bài hát"),
+                                           flags=MessageFlags(suppress_notifications=True))
 
 
     @commands.Cog.listener()
