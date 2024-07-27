@@ -88,7 +88,7 @@ class MusicPlayer(Player[ClientUser]):
         track = self.queue.process_next()
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE)
+                await self.sendMessage(embed=EMPTY_QUEUE, content="@silent")
                 await self.disconnect(force=True)
                 return
         await self.play(track, replace=True)
@@ -103,12 +103,12 @@ class MusicPlayer(Player[ClientUser]):
         track = self.queue.process_next()
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE)
+                await self.sendMessage(embed=EMPTY_QUEUE, content="@silent")
             await self.disconnect(force=True)
             return
         await self.play(track, replace=True)
         if self.channel is not None:
-            await self.sendMessage(embed=Embed(title=f"[{trim_text(track.title, 16)}]({track.uri})" ,description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
+            await self.sendMessage(content="@silent", embed=Embed(description=f"[{trim_text(track.title, 32)}]({track.uri})\n`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
 
 class QueueInterface(ui.View):
 

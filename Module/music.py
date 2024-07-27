@@ -116,10 +116,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await inter.send("Trình phát đã bị tạm dừng rồi")
+            await inter.send("@silent Trình phát đã bị tạm dừng rồi")
             return
         await player.pause()
-        await inter.send(f"Đã tạm dừng bài hát")
+        await inter.send(f"@silent Đã tạm dừng bài hát")
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="pause", description="Tạm dừng bài hát")
@@ -131,10 +131,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if player.paused:
-            await inter.edit_original_response("Trình phát đã bị tạm dừng rồi")
+            await inter.edit_original_response("@silent Trình phát đã bị tạm dừng rồi")
             return
         await player.pause()
-        await inter.edit_original_response(f"Đã tạm dừng bài hát")
+        await inter.edit_original_response(f"@silent Đã tạm dừng bài hát")
 
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
@@ -146,10 +146,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if not player.paused:
-            await inter.send("Trình phát không bị tạm dừng")
+            await inter.send("@silent Trình phát không bị tạm dừng")
             return
         await player.resume()
-        await inter.send("Đã tiếp tục phát")
+        await inter.send("@silent Đã tiếp tục phát")
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="resume", description="Tiếp tục phát bài hát")
@@ -161,10 +161,10 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if not player.paused:
-            await inter.edit_original_response("Trình phát không bị tạm dừng")
+            await inter.edit_original_response("@silent Trình phát không bị tạm dừng")
             return
         await player.resume()
-        await inter.edit_original_response("Đã tiếp tục phát")
+        await inter.edit_original_response("@silent Đã tiếp tục phát")
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.command(name="next", description="Phát bài hát tiếp theo")
@@ -192,9 +192,9 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         player.NotiChannel = inter.channel
         if not player.queue.next_track:
-            return await inter.edit_original_response("Không có bài hát nào đang trong hàng đợi")
+            return await inter.edit_original_response("@silent Không có bài hát nào đang trong hàng đợi")
         await player.playnext()
-        await inter.edit_original_response(
+        await inter.edit_original_response(content="@silent ",
             embed=Embed(
                 title="⏭️ Đã chuyển sang bài hát tiếp theo",
                 color=0x00FFFF
@@ -210,14 +210,14 @@ class Music(commands.Cog):
         player.NotiChannel = inter.channel
         result = await player.playprevious()
         if result:
-            await inter.send(
+            await inter.send(content="@silent ",
                 embed=Embed(
                     title="⏮️ Đã quay lại bài hát trước đó",
                     color=0x00FFFF
                 )
             )
         else:
-            await inter.send(
+            await inter.send(content="@silent ",
                 embed=Embed(
                     title="⚠️ Không có bài hát nào đã phát trước đó",
                     color=0xFFFF00
@@ -234,14 +234,14 @@ class Music(commands.Cog):
         player.NotiChannel = inter.channel
         result = await player.playprevious()
         if result:
-            await inter.edit_original_response(
+            await inter.edit_original_response(content="@silent ",
                 embed=Embed(
                     title="⏮️ Đã quay lại bài hát trước đó",
                     color=0x00FFFF
                 )
             )
         else:
-            await inter.edit_original_response(
+            await inter.edit_original_response(content="@silent ",
                 embed=Embed(
                     title="⚠️ Không có bài hát nào đã phát trước đó",
                     color=0xFFFF00
@@ -283,7 +283,7 @@ class Music(commands.Cog):
     async def clear_queue_legacy(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
         player.queue.clear_queue()
-        await inter.send(embed=Embed(
+        await inter.send(content="@silent ",embed=Embed(
             title="✅ Đã xoá tất cả bài hát trong danh sách chờ",
             color=0x00FF00
         ))
@@ -296,7 +296,7 @@ class Music(commands.Cog):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
         player.queue.clear_queue()
-        await inter.edit_original_response(embed=Embed(
+        await inter.edit_original_response(content="@silent ",embed=Embed(
             title="✅ Đã xoá tất cả bài hát trong danh sách chờ",
             color=0x00FF00
         ))
@@ -309,7 +309,7 @@ class Music(commands.Cog):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
         player.queue.always_connect = not player.queue.always_connect
-        await inter.edit_original_response(embed=disnake.Embed(
+        await inter.edit_original_response(content="@silent ",embed=disnake.Embed(
             title=f"✅ Đã {'bật' if player.queue.always_connect else 'tắt'} chế độ phát không dừng",
             color=0x00FF00
         ))
@@ -335,13 +335,13 @@ class Music(commands.Cog):
     async def loop_mode(self, inter: ApplicationCommandInteraction, mode = LoopMODE.OFF):
         player: MusicPlayer = inter.author.guild.voice_client
         if mode not in (LoopMODE.OFF, LoopMODE.SONG, LoopMODE.PLAYLIST):
-            await inter.send(embed=disnake.Embed(
+            await inter.send(content="@silent ",embed=disnake.Embed(
                 title="❌ Giá trị nhập vào không hợp lệ",
                 color=0xFF0000
             ))
             return
         player.queue.loop = mode
-        await inter.send(embed=disnake.Embed(
+        await inter.send(content="@silent ",embed=disnake.Embed(
             title="✅ Đã thay đổi chế độ phát liên tục",
             color=0x00FF00
         ))
@@ -352,7 +352,7 @@ class Music(commands.Cog):
     @commands.command(name="volume", description="Điều chỉnh âm lượng", aliases=["vol", "v"])
     async def volume_legacy(self, inter: ApplicationCommandInteraction, volume: int = 100):
         if not 4 < volume < 150:
-            await inter.send("Chọn từ **5** đến **150**")
+            await inter.send("@silent Chọn từ **5** đến **150**")
             return
 
         await self.volume.callback(self=self, inter=inter, volume=int(volume))
@@ -377,11 +377,11 @@ class Music(commands.Cog):
             volume = view.volume
 
         elif not 4 < volume < 100:
-            await inter.send("Chọn từ **5** đến **150**")
+            await inter.send("@silent Chọn từ **5** đến **150**")
             return
 
         await player.set_volume(volume)
-        await inter.edit_original_response(f"Đã điểu chỉnh âm lượng thành {volume}%")
+        await inter.edit_original_response(f"@silent Đã điểu chỉnh âm lượng thành {volume}%")
 
     @commands.cooldown(1, 30, commands.BucketType.guild)
     @has_player()
@@ -434,7 +434,7 @@ class Music(commands.Cog):
         if player.paused:
             await player.resume()
 
-        await inter.edit_original_response(embed=disnake.Embed(description=txt))
+        await inter.edit_original_response(content="@silent", embed=disnake.Embed(description=txt))
 
     @seek.autocomplete("time")
     async def seek_successtion(self, inter: disnake.Interaction, query: str):
@@ -476,7 +476,7 @@ class Music(commands.Cog):
         if reason == EndReason.FINISHED:
             await player.process_next()
         elif reason == EndReason.LOAD_FAILED:
-            await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát {player.queue.is_playing.title}")
+            await player.NotiChannel.send(f"@silent Đã có lỗi xảy ra khi tải bài hát {player.queue.is_playing.title}")
             self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại")
             await player.playnext()
 
