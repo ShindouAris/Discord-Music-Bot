@@ -47,7 +47,7 @@ class Queue:
         if self.loop == LoopMODE.PLAYLIST or self.always_connect and self.next_track.__len__() == 0:
             for track in self.played:
                 self.next_track.append(track)
-                self.played.clear()
+            self.played.clear()
 
         if self.next_track.__len__() != 0:
             self.is_playing = self.next_track.popleft()
