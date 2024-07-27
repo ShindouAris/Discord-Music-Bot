@@ -1,5 +1,5 @@
 from mafic import Track, Player
-from mafic.__libraries import Connectable
+from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
 from collections import deque
 from typing import Optional
