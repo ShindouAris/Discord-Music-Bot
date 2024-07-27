@@ -16,23 +16,38 @@ EMPTY_QUEUE = Embed(
     color=0xFFFFFF
 )
 
+class LoopMODE(enumerate):
+    OFF = 0
+    SONG = 1
+    PLAYLIST = 2
+
+
 class Queue:
     def __init__(self):
         self.is_playing: Optional[Track] = None
         self.next_track: deque = deque()
         self.played: deque = deque(maxlen=30)
+        self.always_connect: bool = False
+        self.loop = LoopMODE.OFF
+
 
     def get_next_track(self):
         return [track for track in self.next_track]
 
     def process_next(self):
+        if self.loop == LoopMODE.SONG:
+            return self.is_playing
         return self.next()
 
     def next(self):
-
         if self.is_playing is not None:
             self.played.append(self.is_playing)
             self.is_playing = None
+
+        if self.loop == LoopMODE.PLAYLIST or self.always_connect and self.next_track.__len__() == 0:
+            for track in self.played:
+                self.next_track.append(track)
+                self.played.clear()
 
         if self.next_track.__len__() != 0:
             self.is_playing = self.next_track.popleft()
@@ -92,6 +107,8 @@ class MusicPlayer(Player[ClientUser]):
             await self.disconnect(force=True)
             return
         await self.play(track, replace=True)
+        if self.channel is not None:
+            await self.sendMessage(embed=Embed(description=f"Đang phát {track.title} | {time_format(track.length)}"))
 
 
 

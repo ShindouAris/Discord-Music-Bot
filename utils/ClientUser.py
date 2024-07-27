@@ -43,6 +43,7 @@ class LoadBot:
         intents.message_content = True
         intents.messages = True
         intents.guilds = True
+        intents.voice_states = True
 
         sync_cfg = True
         command_sync_config = commands.CommandSyncFlags(
