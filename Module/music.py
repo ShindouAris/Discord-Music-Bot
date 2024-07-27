@@ -43,7 +43,7 @@ class Music(commands.Cog):
                     url=thumbnail_track.uri,
                     color=0xFFFFFF
                 )
-                embed.set_author(name=result.tracks[0].source, icon_url=music_source_image(result.tracks[0].source.lower()))
+                embed.set_author(name=result.tracks[0].source.capitalize(), icon_url=music_source_image(result.tracks[0].source.lower()))
                 embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
                 embed.set_thumbnail(result.tracks[0].artwork_url)
 
@@ -55,6 +55,7 @@ class Music(commands.Cog):
                     url=track.uri,
                     color=0xFFFFFF
                 )
+                embed.set_author(name=track.source.capitalize(), icon_url=music_source_image(track.source.lower()))
                 embed.description = f"`{track.source.capitalize()} | {track.author}"
                 if track.stream:
                     embed.description += " | 🔴 LIVESTREAM`"

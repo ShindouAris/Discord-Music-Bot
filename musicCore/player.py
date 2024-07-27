@@ -4,8 +4,8 @@ from utils.ClientUser import ClientUser
 from collections import deque
 from typing import Optional
 from disnake.abc import Messageable
-from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags
-from utils.conv import time_format, trim_text
+from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags, Color
+from utils.conv import time_format, trim_text, music_source_image
 
 LOADFAILED = Embed(
     title="❌ Đã có lỗi xảy ra khi tìm kiếm bài hát được yêu cầu",
@@ -108,7 +108,7 @@ class MusicPlayer(Player[ClientUser]):
             return
         await self.play(track, replace=True)
         if self.channel is not None:
-            await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(description=f"[{trim_text(track.title, 32)}]({track.uri})\n`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
+            await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(title=f"[{trim_text(track.title, 32)}]({track.uri})",description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`", color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}", icon_url=music_source_image(track.source.lower())))
 
 class QueueInterface(ui.View):
 
