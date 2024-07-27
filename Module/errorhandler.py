@@ -42,8 +42,12 @@ class HandleError(commands.Cog):
 
             kwargs["embeds"] = []
 
+
+
             for p in paginator(error_msg):
                 kwargs["embeds"].append(disnake.Embed(color=color, description=p))
+
+        kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
 
         try:
             await send_message(ctx, **kwargs)
@@ -70,6 +74,8 @@ class HandleError(commands.Cog):
 
                 for p in paginator(error_msg):
                     kwargs["embed"].append(disnake.Embed(color=color, description=p))
+
+            kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
                     
             await send_message(ctx, **kwargs)
         except:
@@ -138,6 +144,8 @@ class HandleError(commands.Cog):
                 func = ctx.store_message.edit
             except:
                 func = ctx.send
+
+        kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
 
         await func(**kwargs)
         

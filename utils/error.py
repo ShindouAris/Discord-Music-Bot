@@ -32,6 +32,8 @@ class GenericError(commands.CheckFailure):
         self.text = text
         self.self_delete = self_delete
         self.delete_original = delete_original
+        self.components = components
+        self.flags = disnake.MessageFlags(suppress_notifications=True)
 
 def parse_error(
         ctx: Union[disnake.ApplicationCommandInteraction, commands.Context, disnake.MessageInteraction],

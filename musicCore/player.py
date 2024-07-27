@@ -4,7 +4,7 @@ from utils.ClientUser import ClientUser
 from collections import deque
 from typing import Optional
 from disnake.abc import Messageable
-from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed
+from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags
 from utils.conv import time_format, trim_text
 
 LOADFAILED = Embed(
@@ -88,7 +88,7 @@ class MusicPlayer(Player[ClientUser]):
         track = self.queue.process_next()
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE, content="@silent")
+                await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
         await self.play(track, replace=True)
@@ -103,12 +103,12 @@ class MusicPlayer(Player[ClientUser]):
         track = self.queue.process_next()
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE, content="@silent")
+                await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
             await self.disconnect(force=True)
             return
         await self.play(track, replace=True)
         if self.channel is not None:
-            await self.sendMessage(content="@silent", embed=Embed(description=f"[{trim_text(track.title, 32)}]({track.uri})\n`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
+            await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(description=f"[{trim_text(track.title, 32)}]({track.uri})\n`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
 
 class QueueInterface(ui.View):
 
