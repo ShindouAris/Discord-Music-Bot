@@ -87,6 +87,21 @@ def string_to_seconds(time):
 def percentage(part, whole):
     return int((part * whole) / 100.0)
 
+sources = {
+    "deezer": "https://i.ibb.co/Wz7kJYy/deezer.png",
+    "soundcloud": "https://i.ibb.co/CV6NB6w/soundcloud.png",
+    "spotify": "https://i.ibb.co/3SWMXj8/spotify.png",
+    "youtube": "https://i.ibb.co/LCsCCWD/8198147-music-play-player-sound-stream-icon.png",
+    "applemusic": "https://i.ibb.co/Dr4hbS5/applemusic.png",
+    "twitch": "https://cdn3.iconfinder.com/data/icons/popular-services-brands-vol-2/512/twitch-512.png"
+}
+
+def music_source_image(sourcename):
+    return sources.get(
+        sourcename,
+        "https://i.ibb.co/17CK6c1/764167636849917952.gif"
+    )
+
 perms_translations = {
     "add_reactions": "Thêm phản ứng",
     "administrator": "Quản trị viên",

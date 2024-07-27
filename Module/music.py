@@ -5,7 +5,7 @@ import disnake
 from mafic import Track, Playlist, TrackEndEvent, EndReason
 from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction
 from musicCore.check import check_voice, has_player
-from utils.conv import trim_text, time_format, string_to_seconds, percentage
+from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image
 from utils.error import GenericError
 
 class Music(commands.Cog):
@@ -27,7 +27,7 @@ class Music(commands.Cog):
             player: MusicPlayer = await inter.author.voice.channel.connect(cls=MusicPlayer)
             begined = False
 
-        player.notification_channel = inter.channel
+        player.NotiChannel = inter.channel
 
         try:
             result = await player.fetch_tracks(search)
@@ -43,7 +43,8 @@ class Music(commands.Cog):
                     url=thumbnail_track.uri,
                     color=0xFFFFFF
                 )
-                embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}`"
+                embed.set_author(name=result.tracks[0].source, icon_url=music_source_image(result.tracks[0].source.lower()))
+                embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
                 embed.set_thumbnail(result.tracks[0].artwork_url)
 
             elif isinstance(result, list):
