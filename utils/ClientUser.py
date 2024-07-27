@@ -86,7 +86,8 @@ class ClientUser(commands.AutoShardedBot):
                             host=node['host'],
                             port=node['port'],
                             password=node['password'],
-                            label=node['label']
+                            label=node['label'],
+                            secure=False if node['port'] != 443 else True
                         )
                     except Exception as e:
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
