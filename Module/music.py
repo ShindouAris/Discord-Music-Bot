@@ -398,7 +398,7 @@ class Music(commands.Cog):
         if not player.queue.is_playing.seekable:
             raise GenericError("Bài hát này không thể tua")
 
-        await inter.response.defer()
+        await inter.response.defer(ephemeral=True)
 
         position = position.split(" | ")[0].replace(" ", ":")
 
@@ -415,19 +415,17 @@ class Music(commands.Cog):
 
             emoji = "⏩"
 
-            txt = [
-                f"đã tua thời gian của bài hát đến: `{time_format(milliseconds)}`",
+            txt = f"{inter.author.mention} đã tua thời gian của bài hát đến: `{time_format(milliseconds)}`", \
                 f"{emoji} **⠂{inter.author.mention} tua thời gian của bài hát đến:** `{time_format(milliseconds)}`"
-            ]
+
 
         else:
 
             emoji = "⏪"
 
-            txt = [
-                f" đã tua thời gian của bài hát trở lại: `{time_format(milliseconds)}`",
+            txt = f"{inter.author.mention} đã tua thời gian của bài hát trở lại: `{time_format(milliseconds)}`", \
                 f"{emoji} **⠂{inter.author.mention} đưa thời gian của bài hát trở lại:** `{time_format(milliseconds)}`"
-            ]
+
 
         await player.seek(int(milliseconds))
 
