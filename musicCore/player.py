@@ -108,9 +108,7 @@ class MusicPlayer(Player[ClientUser]):
             return
         await self.play(track, replace=True)
         if self.channel is not None:
-            await self.sendMessage(embed=Embed(description=f" {track.source.capitalize()} | {track.title} | {time_format(track.length)}").set_thumbnail(url=track.artwork_url))
-
-
+            await self.sendMessage(embed=Embed(title=f"[{trim_text(track.title, 16)}]({track.uri})" ,description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`").set_thumbnail(url=track.artwork_url))
 
 class QueueInterface(ui.View):
 
