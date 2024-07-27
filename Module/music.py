@@ -138,7 +138,7 @@ class Music(commands.Cog):
 
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
-    @commands.command(name="resumme", description="Tiếp tục phát bài hát")
+    @commands.command(name="resume", description="Tiếp tục phát bài hát")
     @commands.guild_only()
     @has_player()
     @check_voice()
