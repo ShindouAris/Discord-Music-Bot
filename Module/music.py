@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags
@@ -13,12 +15,20 @@ class Music(commands.Cog):
         self.bot: ClientUser = bot
 
     @check_voice()
+    @commands.command(name="play", description="Chơi một bài hát", aliases=["p"])
+    async def play_legacy(self, inter: ApplicationCommandInteraction, search: str):
+        await self.play.callback(self=self, inter=inter, search=search)
+
+    @check_voice()
     @commands.slash_command(name="play", description="Chơi một bản nhạc", options=[
         Option(name="search",
                description="Tìm kiếm bài hát bằng tên hoặc url",
                required=True)])
     async def play(self, inter: disnake.ApplicationCommandInteraction, search: str):
-        await inter.response.defer(ephemeral=True)
+        try:
+            await inter.response.defer(ephemeral=True)
+        except AttributeError:
+            pass
 
         player: MusicPlayer = inter.author.guild.voice_client
         begined = True
@@ -67,7 +77,10 @@ class Music(commands.Cog):
         except:
             embed = LOADFAILED
             self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild_id})")
-        await inter.edit_original_response(embed=embed)
+        try:
+            await inter.edit_original_response(embed=embed)
+        except (disnake.InteractionNotEditable, AttributeError):
+            await inter.send(embed=embed, flags=MessageFlags(suppress_embeds=True), delete_after=15)
 
         if not begined:
             await player.process_next()
@@ -150,7 +163,7 @@ class Music(commands.Cog):
             await inter.send("Trình phát không bị tạm dừng", flags=MessageFlags(suppress_notifications=True))
             return
         await player.resume()
-        await inter.send("@silent Đã tiếp tục phát")
+        await inter.send("Đã tiếp tục phát", flags=MessageFlags(suppress_notifications=True))
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="resume", description="Tiếp tục phát bài hát")
@@ -180,7 +193,7 @@ class Music(commands.Cog):
             embed=Embed(
                 title="⏭️ Đã chuyển sang bài hát tiếp theo",
                 color=0x00FFFF
-            )
+            ), flags=MessageFlags(suppress_notifications=True)
         )
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
@@ -382,7 +395,7 @@ class Music(commands.Cog):
             return
 
         await player.set_volume(volume)
-        await inter.edit_original_response(f"@silent Đã điểu chỉnh âm lượng thành {volume}%")
+        await inter.edit_original_response(f"Đã điểu chỉnh âm lượng thành {volume}%", flags=MessageFlags(suppress_notifications=True))
 
     @commands.cooldown(1, 30, commands.BucketType.guild)
     @has_player()
