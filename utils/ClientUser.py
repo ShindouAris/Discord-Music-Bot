@@ -27,14 +27,11 @@ gc.collect()
 
 load_dotenv()
 
-FORMAT = '[%(asctime)s]> %(message)s'
-
 logger = logging.getLogger(__name__)
 class LoadBot:
 
 
     def load(self):
-        logging.basicConfig(level=logging.INFO, format=FORMAT)
         logger.info("Booting Client....")
 
         DISCORD_TOKEN = environ.get("TOKEN")
@@ -54,7 +51,7 @@ class LoadBot:
                             sync_guild_commands=sync_cfg
                         )
 
-        bot  = ClientUser(intents=intents, command_prefix="r?", command_sync_flag=command_sync_config)
+        bot  = ClientUser(intents=intents, command_prefix=environ.get("PREFIX") or "?", command_sync_flag=command_sync_config)
 
         bot.load_modules()
         print("-"*40)
