@@ -277,3 +277,36 @@ class VolumeInteraction(ui.View):
         await interaction.response.edit_message(content=f"Âm lượng đã thay đổi!",embed=None, view=None)
         self.volume = int(interaction.data.values[0][4:])
         self.stop()
+
+class SelectInteraction(ui.View):
+
+    def __init__(self, options: list[SelectOption], *, timeout=180):
+        super().__init__(timeout=timeout)
+        self.select = None
+        self.items = list(options)
+        self.inter = None
+
+        self.load()
+
+    def load(self):
+
+        self.clear_items()
+
+        select_menu = ui.Select(placeholder="Chọn một tùy chọn dưới đây", options=self.items)
+        select_menu.callback = self.callback
+        self.add_item(select_menu)
+        self.select = self.items[0].value
+
+        button = ui.Button(label="Hủy bỏ", emoji="❌")
+        button.callback = self.cancel_callback
+        self.add_item(button)
+
+    async def cancel_callback(self, interaction: MessageInteraction):
+        self.select = False
+        self.inter = interaction
+        self.stop()
+
+    async def callback(self, interaction: MessageInteraction):
+        self.select = interaction.data.values[0]
+        self.inter = interaction
+        self.stop()

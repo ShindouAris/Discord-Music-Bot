@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags
 import disnake
 from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter
-from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction
+from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction, SelectInteraction
 from musicCore.check import check_voice, has_player
 from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image
 from utils.error import GenericError
@@ -42,20 +44,72 @@ class Music(commands.Cog):
         try:
             result = await player.fetch_tracks(search)
             if isinstance(result, Playlist):
-                total_time = 0
-                for track in result.tracks:
-                    player.queue.add_next_track(track)
-                    if not track.stream: total_time += track.length
+                    view = SelectInteraction(
+                    options=[disnake.SelectOption(label="Bài hát", emoji="🎵",
+                                                   description="Chỉ tải lên bài hát từ liên kết.", value="music"),
+                    disnake.SelectOption(label="Playlist", emoji="🎶",
+                                                   description="Tải danh sách bài hát hiện tại, không gợi ý khi sử dụng với danh sách do youtube tạo ra.", value="playlist")], timeout=30)
+                    embed = Embed(
+                        description='**Liên kết chứa video có danh sách phát.**\n'
+                                    f'Chọn một tùy chọn trong <t:{int((disnake.utils.utcnow() + timedelta(seconds=30)).timestamp())}:R> để tiếp tục.',
+                    )
 
-                thumbnail_track = result.tracks[0]
-                embed = disnake.Embed(
-                    title=trim_text("[Playlist] " + thumbnail_track.title, 32),
-                    url=thumbnail_track.uri,
-                    color=0xFFFFFF
-                )
-                embed.set_author(name=result.tracks[0].source.capitalize(), icon_url=music_source_image(result.tracks[0].source.lower()))
-                embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
-                embed.set_thumbnail(result.tracks[0].artwork_url)
+                    msg = await inter.send(embed=embed, view=view)
+
+                    await view.wait()
+
+                    if not view.inter or view.select == False:
+
+                        try:
+                            func = inter.edit_original_message
+                        except AttributeError:
+                            func = msg.edit
+
+                        await func(
+                            content=f"{'Thao tác đã bị hủy' if view.select is not False else 'Đã hết thời gian chờ'}" if view.select is not False else "Đã bị hủy bởi người dùng.",
+                            embed=None, flags=MessageFlags(suppress_notifications=True)
+                        )
+                        return
+
+                    if view.select == "playlist":
+
+                        total_time = 0
+                        for track in result.tracks:
+                            player.queue.add_next_track(track)
+                            if not track.stream: total_time += track.length
+
+                        thumbnail_track = result.tracks[0]
+                        embed = disnake.Embed(
+                            title=trim_text("[Playlist] " + thumbnail_track.title, 32),
+                            url=thumbnail_track.uri,
+                            color=0xFFFFFF
+                        )
+                        embed.set_author(name=result.tracks[0].source.capitalize(), icon_url=music_source_image(result.tracks[0].source.lower()))
+                        embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
+                        embed.set_thumbnail(result.tracks[0].artwork_url)
+                        try:
+                            await inter.edit_original_response(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                        except AttributeError:
+                            await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                    else:
+                        track: Track = result.tracks[0]
+                        player.queue.add_next_track(track)
+                        embed = disnake.Embed(
+                            title=trim_text(track.title, 32),
+                            url=track.uri,
+                            color=0xFFFFFF
+                        )
+                        embed.set_author(name=track.source.capitalize(), icon_url=music_source_image(track.source.lower()))
+                        embed.description = f"`{track.source.capitalize()} | {track.author}"
+                        if track.stream:
+                            embed.description += " | 🔴 LIVESTREAM`"
+                        else:
+                            embed.description += f" | {time_format(track.length)}`"
+                        embed.set_thumbnail(track.artwork_url)
+                        try:
+                            await inter.edit_original_response(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                        except AttributeError:
+                            await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
 
             elif isinstance(result, list):
                 track: Track = result[0]
