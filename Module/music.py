@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 
 from disnake.ext import commands
@@ -54,7 +55,7 @@ class Music(commands.Cog):
                                     f'Chọn một tùy chọn trong <t:{int((disnake.utils.utcnow() + timedelta(seconds=30)).timestamp())}:R> để tiếp tục.',
                     )
 
-                    msg = await inter.send(embed=embed, view=view)
+                    msg = await inter.send(embed=embed, view=view, flags=MessageFlags(suppress_notifications=True))
 
                     await view.wait()
 
@@ -134,7 +135,7 @@ class Music(commands.Cog):
         try:
             await inter.edit_original_response(embed=embed)
         except (disnake.InteractionNotEditable, AttributeError):
-            await inter.send(embed=embed, flags=MessageFlags(suppress_embeds=True), delete_after=15)
+            await inter.send(embed=embed, flags=MessageFlags(suppress_notifications=True), delete_after=15)
 
         if not begined:
             await player.process_next()
@@ -182,7 +183,6 @@ class Music(commands.Cog):
     @check_voice()
     async def pause_legacy(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         if player.paused:
             await inter.send("Trình phát đã bị tạm dừng rồi", flags=MessageFlags(suppress_notifications=True))
             return
@@ -197,7 +197,6 @@ class Music(commands.Cog):
     async def pause(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         if player.paused:
             await inter.edit_original_response("Trình phát đã bị tạm dừng rồi", flags=MessageFlags(suppress_notifications=True))
             return
@@ -212,7 +211,6 @@ class Music(commands.Cog):
     @check_voice()
     async def resume_legacy(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         if not player.paused:
             await inter.send("Trình phát không bị tạm dừng", flags=MessageFlags(suppress_notifications=True))
             return
@@ -227,7 +225,6 @@ class Music(commands.Cog):
     async def resume(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         if not player.paused:
             await inter.edit_original_response("Trình phát không bị tạm dừng", flags=MessageFlags(suppress_notifications=True))
             return
@@ -241,7 +238,6 @@ class Music(commands.Cog):
     @check_voice()
     async def next_legacy(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         await player.playnext()
         await inter.send(
             embed=Embed(
@@ -258,7 +254,6 @@ class Music(commands.Cog):
     async def next(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         if not player.queue.next_track:
             return await inter.edit_original_response("Không có bài hát nào đang trong hàng đợi", flags=MessageFlags(suppress_notifications=True))
         await player.playnext()
@@ -275,7 +270,6 @@ class Music(commands.Cog):
     @commands.command(name="previous", description="Phát lại bài hát trước đó")
     async def prev(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         result = await player.playprevious()
         if result:
             await inter.send(
@@ -299,7 +293,6 @@ class Music(commands.Cog):
     async def prev(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
-        player.NotiChannel = inter.channel
         result = await player.playprevious()
         if result:
             await inter.edit_original_response(
@@ -366,19 +359,6 @@ class Music(commands.Cog):
         player.queue.clear_queue()
         await inter.edit_original_response(embed=Embed(
             title="✅ Đã xoá tất cả bài hát trong danh sách chờ",
-            color=0x00FF00
-        ), flags=MessageFlags(suppress_notifications=True))
-
-    @commands.cooldown(1, 10, commands.BucketType.guild)
-    @has_player()
-    @check_voice()
-    @commands.slash_command(name="247", description="Chế độ phát không dừng")
-    async def non_stop(self, inter: ApplicationCommandInteraction):
-        await inter.response.defer()
-        player: MusicPlayer = inter.author.guild.voice_client
-        player.queue.always_connect = not player.queue.always_connect
-        await inter.edit_original_response(embed=disnake.Embed(
-            title=f"✅ Đã {'bật' if player.queue.always_connect else 'tắt'} chế độ phát không dừng",
             color=0x00FF00
         ), flags=MessageFlags(suppress_notifications=True))
 
@@ -567,6 +547,38 @@ class Music(commands.Cog):
             await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát {player.queue.is_playing.title}", flags=MessageFlags(suppress_notifications=True))
             self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại")
             await player.playnext()
+
+
+    @commands.Cog.listener("on_voice_state_update")
+    async def player_eco_mode(self, member: disnake.Member, before: disnake.VoiceState, after: disnake.VoiceState):
+        if member.bot:
+            return 
+        vc = member.guild.me.voice
+
+        if vc is None:
+            return
+
+        player: MusicPlayer = MusicPlayer(client=self.bot, channel=vc.channel)
+
+        if not player:
+            return
+        if before.channel != after.channel:
+            vc = player.guild.me.voice.channel
+            check = any(m for m in vc.members if not m.bot and not (m.voice.deaf or m.voice.self_deaf))
+
+            if check:
+                return
+
+            await asyncio.sleep(180)
+
+            check = any(m for m in vc.members if not m.bot and not (m.voice.deaf or m.voice.self_deaf))
+
+            if check:
+                return
+
+            await player.stop()
+            await player.disconnect(force=True)
+            await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
 
 def setup(bot: ClientUser):
     bot.add_cog(Music(bot))

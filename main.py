@@ -1,5 +1,4 @@
-from utils.ClientUser import LoadBot
+from utils.ClientUser import load
 import utils.logger
 utils.logger.setup_loger()
-bot = LoadBot()
-bot.load()
+load()

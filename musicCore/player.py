@@ -1,3 +1,4 @@
+import mafic.errors
 from mafic import Track, Player
 from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
@@ -27,7 +28,6 @@ class Queue:
         self.is_playing: Optional[Track] = None
         self.next_track: deque = deque()
         self.played: deque = deque(maxlen=30)
-        self.always_connect: bool = False
         self.loop = LoopMODE.OFF
 
 
@@ -44,7 +44,7 @@ class Queue:
             self.played.append(self.is_playing)
             self.is_playing = None
 
-        if self.loop == LoopMODE.PLAYLIST or self.always_connect and self.next_track.__len__() == 0:
+        if self.loop == LoopMODE.PLAYLIST and self.next_track.__len__() == 0:
             for track in self.played:
                 self.next_track.append(track)
             self.played.clear()
@@ -65,6 +65,9 @@ class Queue:
         return self.is_playing
 
     def add_next_track(self, track: Track):
+        if self.loop == LoopMODE.PLAYLIST and self.next_track.__len__() == 0:
+            self.next_track.appendleft(track)
+            return
         self.next_track.append(track)
 
     def clear_queue(self):

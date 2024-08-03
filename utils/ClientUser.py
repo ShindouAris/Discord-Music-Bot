@@ -28,40 +28,6 @@ gc.collect()
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-class LoadBot:
-
-
-    def load(self):
-        logger.info("Booting Client....")
-
-        DISCORD_TOKEN = environ.get("TOKEN")
-
-        intents = disnake.Intents()
-        intents.message_content = True
-        intents.messages = True
-        intents.guilds = True
-        intents.voice_states = True
-
-        sync_cfg = True
-        command_sync_config = commands.CommandSyncFlags(
-                            allow_command_deletion=sync_cfg,
-                            sync_commands=sync_cfg,
-                            sync_commands_debug=sync_cfg,
-                            sync_global_commands=sync_cfg,
-                            sync_guild_commands=sync_cfg
-                        )
-
-        bot  = ClientUser(intents=intents, command_prefix=environ.get("PREFIX") or "?", command_sync_flag=command_sync_config)
-
-        bot.load_modules()
-        print("-"*40)
-
-        try:
-            bot.run(DISCORD_TOKEN)
-        except Exception as e:
-            if  "LoginFailure" in str(e):
-                logger.error("An Error occured:", repr(e))
-
 
 class ClientUser(commands.AutoShardedBot):
     
@@ -110,7 +76,7 @@ class ClientUser(commands.AutoShardedBot):
                 module_filename = path.join(modules_dir, filename).replace('\\', '.').replace('/', '.')
                 try:
                     self.reload_extension(module_filename)
-                    logger.error(f'{Fore.GREEN} [ ✅ ] Module {file} Đã tải lên thành công{Style.RESET_ALL}')
+                    logger.info(f'{Fore.GREEN} [ ✅ ] Module {file} Đã tải lên thành công{Style.RESET_ALL}')
                     load_status["reloaded"].append(module_filename)
                 except (commands.ExtensionAlreadyLoaded, commands.ExtensionNotLoaded):
                     try:
@@ -125,3 +91,35 @@ class ClientUser(commands.AutoShardedBot):
                     continue
                 
         return load_status
+
+
+def load():
+    logger.info("Booting Client....")
+
+    DISCORD_TOKEN = environ.get("TOKEN")
+
+    intents = disnake.Intents()
+    intents.message_content = True
+    intents.messages = True
+    intents.guilds = True
+    intents.voice_states = True
+
+    sync_cfg = True
+    command_sync_config = commands.CommandSyncFlags(
+        allow_command_deletion=sync_cfg,
+        sync_commands=sync_cfg,
+        sync_commands_debug=sync_cfg,
+        sync_global_commands=sync_cfg,
+        sync_guild_commands=sync_cfg
+    )
+
+    bot  = ClientUser(intents=intents, command_prefix=environ.get("PREFIX") or "?", command_sync_flag=command_sync_config)
+
+    bot.load_modules()
+    print("-"*40)
+
+    try:
+        bot.run(DISCORD_TOKEN)
+    except Exception as e:
+        if  "LoginFailure" in str(e):
+            logger.error("An Error occured:", repr(e))
