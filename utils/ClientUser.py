@@ -10,7 +10,7 @@ from disnake.ext import commands
 from dotenv import load_dotenv
 import logging
 import gc
-from mafic import NodePool
+from mafic import NodePool, Node
 from typing import TypedDict
 
 class LavalinkInfo(TypedDict):
@@ -33,14 +33,22 @@ class ClientUser(commands.AutoShardedBot):
     
     def __init__(self, *args, intents, command_sync_flag, command_prefix: str, **kwargs) -> None:
         super().__init__(*args, **kwargs, intents=intents, command_sync_flags=command_sync_flag, command_prefix=command_prefix)
+        self.sesson_key = None
         self.uptime = disnake.utils.utcnow()
         self.env = environ
         self.nodeClient = NodePool(self)
         self.logger = logger
         self.loop = asyncio.get_event_loop()
         self.loop.create_task(self.loadNode())
+        self.available_nodes: list = []
+        self.unavailable_nodes: list = []
 
     async def loadNode(self):
+            try:
+                with open("lavalink_session_key.ini", "r") as session_key_value:
+                    session_key = session_key_value.read()
+            except FileNotFoundError:
+                session_key = None
 
             for node in data:
                 for cc in range(4):
@@ -50,15 +58,41 @@ class ClientUser(commands.AutoShardedBot):
                             port=node['port'],
                             password=node['password'],
                             label=node['label'],
-                            secure=False if node['port'] != 443 else True
+                            secure=False if node['port'] != 443 else True,
+                            resuming_session_id=session_key,
+                            timeout=1.5
                         )
                     except Exception as e:
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
+                        self.unavailable_nodes.append(node)
                     else:
                         break
 
+    async def reconnect_node(self, host, port, password, label, resume_session_key = None):
+        try:
+            await self.nodeClient.create_node(
+                host=host,
+                password=password,
+                label=label,
+                port=port,
+                resuming_session_id=resume_session_key
+            )
+        except Exception as e:
+            logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
+
+    async def on_node_ready(self, node: Node):
+        with open("lavalink_session_key.ini", "w") as session_key_value:
+            session_key_value.write(node.session_id)
+            self.available_nodes.append(node)
+
+    async def on_node_unavailable(self, node: Node):
+        logger.warning(f"Mất kết nối đến máy chủ âm nhạc: {node.label}")
+        self.available_nodes.remove(node)
+        await self.nodeClient.remove_node(node)
+        await self.reconnect_node(node.host, node.port, node.__password, node.label)
+
     async def on_ready(self):
-            logger.info(f"BOT {self.user.name} đã sẵn sàng")
+                logger.info(f"BOT {self.user.name} đã sẵn sàng")
 
     def load_modules(self):
 

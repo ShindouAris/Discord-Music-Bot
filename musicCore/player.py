@@ -1,3 +1,6 @@
+import asyncio
+import traceback
+
 import mafic.errors
 from mafic import Track, Player
 from disnake.abc import Connectable
@@ -7,6 +10,7 @@ from typing import Optional
 from disnake.abc import Messageable
 from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags, Color
 from utils.conv import time_format, trim_text, music_source_image
+from logging import getLogger
 
 LOADFAILED = Embed(
     title="❌ Đã có lỗi xảy ra khi tìm kiếm bài hát được yêu cầu",
@@ -16,6 +20,8 @@ EMPTY_QUEUE = Embed(
     title="👋 Danh sách chờ đã hết. Bot sẽ rời khỏi kênh của bạn",
     color=0xFFFFFF
 )
+
+logger = getLogger(__name__)
 
 class LoopMODE(enumerate):
     OFF = 0
@@ -29,7 +35,7 @@ class Queue:
         self.next_track: deque = deque()
         self.played: deque = deque(maxlen=30)
         self.loop = LoopMODE.OFF
-
+        self.autoplay: deque = deque(maxlen=70)
 
     def get_next_track(self):
         return [track for track in self.next_track]
@@ -51,6 +57,9 @@ class Queue:
 
         if self.next_track.__len__() != 0:
             self.is_playing = self.next_track.popleft()
+
+        if self.next_track.__len__() == 0 and self.autoplay.__len__() != 0:
+            self.is_playing = self.autoplay.popleft()
 
         return self.is_playing
 
@@ -76,11 +85,13 @@ class Queue:
 class MusicPlayer(Player[ClientUser]):
     def __init__(self, client: ClientUser, channel: Connectable):
         super().__init__(client, channel)
+        self.locked = False
         self.queue: Queue = Queue()
         self.player_channel = channel
         self.NotiChannel: Optional[Messageable] = None
         self.message: Optional[Message] = None
         self.nightCore = False
+        self.is_autoplay_mode = False
 
     async def sendMessage(self, **kwargs):
         try:
@@ -95,6 +106,11 @@ class MusicPlayer(Player[ClientUser]):
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
+        if self.channel is not None:
+            await self.sendMessage(embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,
+                                                description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`",
+                                                color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}",
+                                                icon_url=music_source_image(track.source.lower())), flags=MessageFlags(suppress_notifications=True))
         await self.play(track, replace=True)
 
     async def playprevious(self):
@@ -102,9 +118,16 @@ class MusicPlayer(Player[ClientUser]):
         if track is None:
             return False
         await self.play(track, replace=True)
+        if self.channel is not None:
+            await self.sendMessage(embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,
+                                                description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`",
+                                                color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}",
+                                                icon_url=music_source_image(track.source.lower())), flags=MessageFlags(suppress_notifications=True))
 
     async def process_next(self):
         track = self.queue.process_next()
+        if self.is_autoplay_mode and track is None:
+            track = await self.get_auto_tracks()
         if track is None:
             if self.channel is not None:
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
@@ -113,6 +136,125 @@ class MusicPlayer(Player[ClientUser]):
         await self.play(track, replace=True)
         if self.channel is not None and self.queue.loop != LoopMODE.SONG:
             await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`", color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}", icon_url=music_source_image(track.source.lower())))
+
+    async def get_auto_tracks(self):
+        try:
+            return self.queue.autoplay.popleft()
+        except:
+            pass
+
+        search: list[Track] = []
+
+        if self.locked:
+            return
+
+        for q in self.queue.played + self.queue.autoplay:
+
+            if len(search) > 4: break
+
+            if q.length < 90000: continue
+
+            search.append(q)
+
+        t = None
+        ts = []
+        t_youtube = []
+
+        exep = None
+
+        if search:
+
+            search.reverse()
+
+            self.locked = True
+
+            for track_data in search:
+
+                if not ts:
+                    if track_data.source.lower() == "youtube":
+                        query = f"https://www.youtube.com/watch?v={track_data.identifier}&list=RD{track_data.identifier}"
+                    else:
+                        query = f"{track_data.author}"
+
+                    try:
+                        ts = await self.fetch_tracks(query)
+                    except Exception as e:
+                        if [err for err in ("Could not find tracks from mix", "Could not read mix page") if err in str(e)]:
+                            try:
+                                t_youtube = await self.fetch_tracks(
+                                    f"\"{track_data.author}\""
+                                )
+                                t = track_data
+                            except Exception as e:
+                                exep = e
+                                continue
+                        else:
+                            exep = e
+                            traceback.print_exc()
+                            await asyncio.sleep(1.5)
+                            continue
+                t = track_data
+                break
+
+            if not ts:
+                ts = t_youtube
+                ts.reverse()
+
+            if not ts:
+                self.locked = False
+                if exep:
+                    if isinstance(exep, mafic.TrackLoadException):
+                        errmsg =    f"Lỗi ```java\n{exep.cause}```\n" \
+                                    f"Mã lỗi: `\n{exep.message}`\n" \
+                                    f"Máy chủ âm nhạc `{self.node.label}`"
+                    else:
+                        errmsg = f"Chi tiết: ```py\n{repr(exep)}```"
+                else:
+                    errmsg = "Không có kết quả"
+
+                if self.NotiChannel is not None:
+                    await self.sendMessage(embed = Embed(
+                        description=f"**Không lấy được dữ liệu tự động phát:**\n"
+                                    f"{errmsg}."), flags=MessageFlags(suppress_notifications=True), delete_after=10)
+                    await asyncio.sleep(8)
+                await self.disconnect(force=True)
+                return
+
+            try:
+                ts = ts.tracks
+            except AttributeError:
+                pass
+
+            try:
+                ts = [t for t in ts if not [u for u in search if t.uri.startswith(u.uri)]]
+            except:
+                pass
+
+            if t:
+                track_return = []
+
+                for s in ts:
+
+                    if s.stream:
+                        continue
+
+                    if s.length < 90000:
+                        continue
+
+                    if t.identifier and t.identifier == s.identifier:
+                        continue
+
+                    track_return.append(t)
+
+                ts.clear()
+                self.queue.autoplay.extend(track_return)
+
+                logger.info(self.queue.autoplay)
+
+                try:
+                    return self.queue.autoplay.popleft()
+                except:
+                    return None
 
 class QueueInterface(ui.View):
 

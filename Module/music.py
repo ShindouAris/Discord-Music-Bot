@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import timedelta
 
+import mafic
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags
@@ -33,6 +34,9 @@ class Music(commands.Cog):
         except AttributeError:
             pass
 
+        if self.bot.available_nodes.__len__() == 0:
+            raise GenericError("Không có máy chủ âm nhạc khả dụng")
+
         player: MusicPlayer = inter.author.guild.voice_client
         begined = True
 
@@ -44,6 +48,7 @@ class Music(commands.Cog):
 
         try:
             result = await player.fetch_tracks(search)
+
             if isinstance(result, Playlist):
                     view = SelectInteraction(
                     options=[disnake.SelectOption(label="Bài hát", emoji="🎵",
@@ -70,6 +75,7 @@ class Music(commands.Cog):
                             content=f"{'Thao tác đã bị hủy' if view.select is not False else 'Đã hết thời gian chờ'}" if view.select is not False else "Đã bị hủy bởi người dùng.",
                             embed=None, flags=MessageFlags(suppress_notifications=True)
                         )
+                        await player.disconnect()
                         return
 
                     if view.select == "playlist":
@@ -89,7 +95,7 @@ class Music(commands.Cog):
                         embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
                         embed.set_thumbnail(result.tracks[0].artwork_url)
                         try:
-                            await inter.edit_original_response(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                            await inter.edit_original_response(embed=embed, delete_after=5,view=None, flags=MessageFlags(suppress_notifications=True))
                         except AttributeError:
                             await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
                     else:
@@ -203,6 +209,22 @@ class Music(commands.Cog):
         await player.pause()
         await inter.edit_original_response(f"Đã tạm dừng bài hát", flags=MessageFlags(suppress_notifications=True))
 
+    @commands.slash_command(name="autoplay",description="Chế độ tự động phát (Bật / Tắt)")
+    @has_player()
+    @check_voice()
+    async def autoplaymode(self, inter: ApplicationCommandInteraction):
+        await inter.response.defer()
+        player: MusicPlayer = inter.author.guild.voice_client
+        player.is_autoplay_mode = not player.is_autoplay_mode
+        await inter.edit_original_response(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
+
+    @commands.command(name="autoplay",description="Chế độ tự động phát (Bật / Tắt)", aliases=["ap"])
+    @has_player()
+    @check_voice()
+    async def autoplay(self, inter: ApplicationCommandInteraction):
+        player: MusicPlayer = inter.author.guild.voice_client
+        player.is_autoplay_mode = not player.is_autoplay_mode
+        await inter.send(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.command(name="resume", description="Tiếp tục phát bài hát")
@@ -536,18 +558,54 @@ class Music(commands.Cog):
         await inter.edit_original_response(embed=disnake.Embed(description=f"Đã {txt} tính năng nightcore\n -# Tính năng này để tăng âm sắc và tốc độ cho bài hát"),
                                            flags=MessageFlags(suppress_notifications=True))
 
+    @has_player()
+    @check_voice()
+    @commands.slash_command(name="change_node", description="Thay đổi máy chủ âm nhạc", options=[Option(name="server", description="Máy chủ để đổi", required=True)])
+    async def change_node(self, inter: ApplicationCommandInteraction, server):
+        if server not in self.bot.available_nodes:
+            raise GenericError(f"Máy chủ âm nhạc {server} không khả dụng")
+
+        player: MusicPlayer = inter.author.guild.voice_client
+
+        if server == player.node.label:
+            raise GenericError(f"Trình phát đã ở trên máy chủ âm nhạc này rồi")
+
+        await player.transfer_to(server)
+
+    @change_node.autocomplete("server")
+    async def node_suggestion(self, inter: disnake.Interaction, query: str):
+        player: MusicPlayer = inter.author.guild.voice_client
+        listNode: list[mafic.Node] = self.bot.available_nodes
+        if not listNode:
+            return None
+        if not query:
+            return [node.label for node in listNode if
+                    node != player.node and query.lower() in node.label.lower() and node.available]
+
+        return [node.label for node in listNode if node != player.node
+                and query.lower() in node.label.lower() and node.available]
+
 
     @commands.Cog.listener()
     async def on_track_end(self, event: TrackEndEvent[MusicPlayer]):
         player = event.player
         reason = event.reason
+        failed = 0
         if reason == EndReason.FINISHED:
             await player.process_next()
         elif reason == EndReason.LOAD_FAILED:
-            await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát {player.queue.is_playing.title}", flags=MessageFlags(suppress_notifications=True))
+            failed += 1
+            if failed >= 5:
+                self.bot.available_nodes.remove(player.node)
+                self.bot.unavailable_nodes.append(player.node)
+                await self.bot.nodeClient.remove_node(player.node)
+                failed = 0
+                return
+            await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát", flags=MessageFlags(suppress_notifications=True))
             self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại")
-            await player.playnext()
-
+            if self.bot.available_nodes.__len__() == 0:
+                return await player.disconnect()
+            await player.process_next()
 
     @commands.Cog.listener("on_voice_state_update")
     async def player_eco_mode(self, member: disnake.Member, before: disnake.VoiceState, after: disnake.VoiceState):
