@@ -163,3 +163,4 @@ cython_debug/
 
 lavalink.json
 api/
+lavalink_session_key.ini

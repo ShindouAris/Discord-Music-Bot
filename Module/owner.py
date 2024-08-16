@@ -27,5 +27,15 @@ class Owner(commands.Cog):
         else:
             return txt
 
+    @commands.is_owner()
+    @commands.command(name="shutdown")
+    async def shutdown(self, inter: disnake.ApplicationCommandInteraction):
+
+        if self.bot.is_closed():
+            return
+
+        await inter.send("Đang tắt bot")
+        await self.bot.close()
+
 def setup(bot: ClientUser):
     bot.add_cog(Owner(bot))

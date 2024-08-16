@@ -231,7 +231,7 @@ class MusicPlayer(Player[ClientUser]):
                 pass
 
             if t:
-                track_return = []
+                track_return: list[Track] = []
 
                 for s in ts:
 

@@ -42,6 +42,7 @@ class ClientUser(commands.AutoShardedBot):
         self.loop.create_task(self.loadNode())
         self.available_nodes: list = []
         self.unavailable_nodes: list = []
+        self.status = disnake.Status.idle
 
     async def loadNode(self):
             try:
@@ -92,6 +93,9 @@ class ClientUser(commands.AutoShardedBot):
         await self.reconnect_node(node.host, node.port, node.__password, node.label)
 
     async def on_ready(self):
+
+                await self.change_presence(status=self.status)
+
                 logger.info(f"BOT {self.user.name} đã sẵn sàng")
 
     def load_modules(self):

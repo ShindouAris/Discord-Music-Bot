@@ -137,7 +137,7 @@ class Music(commands.Cog):
                 embed = LOADFAILED
         except:
             embed = LOADFAILED
-            self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild_id})")
+            self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild.id})")
         try:
             await inter.edit_original_response(embed=embed)
         except (disnake.InteractionNotEditable, AttributeError):
@@ -153,6 +153,8 @@ class Music(commands.Cog):
     @check_voice()
     async def stop_legacy(self, inter: disnake.AppCmdInter):
         player: MusicPlayer = inter.author.guild.voice_client
+        if player.queue.autoplay.__len__() != 0:
+            player.queue.autoplay.clear()
         await player.stop()
         await player.disconnect(force=True)
         await inter.send(
@@ -170,6 +172,8 @@ class Music(commands.Cog):
     async def stop(self, ctx: ApplicationCommandInteraction):
         await ctx.response.defer()
         player: MusicPlayer = ctx.author.guild.voice_client
+        if player.queue.autoplay.__len__() != 0:
+            player.queue.autoplay.clear()
         try:
             await player.stop()
             await player.disconnect(force=True)
@@ -216,14 +220,18 @@ class Music(commands.Cog):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
         player.is_autoplay_mode = not player.is_autoplay_mode
+        if not player.is_autoplay_mode and player.queue.autoplay.__len__() != 0:
+            player.queue.autoplay.clear()
         await inter.edit_original_response(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
 
-    @commands.command(name="autoplay",description="Chế độ tự động phát (Bật / Tắt)", aliases=["ap"])
+    @commands.command(name="autoplay",description="Chế độ tự động phát (Bậ:sot / Tắt)", aliases=["ap"])
     @has_player()
     @check_voice()
     async def autoplay(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
         player.is_autoplay_mode = not player.is_autoplay_mode
+        if not player.is_autoplay_mode and player.queue.autoplay:
+            player.queue.autoplay.clear()
         await inter.send(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
@@ -602,7 +610,7 @@ class Music(commands.Cog):
                 failed = 0
                 return
             await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát", flags=MessageFlags(suppress_notifications=True))
-            self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại")
+            self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại: {reason}")
             if self.bot.available_nodes.__len__() == 0:
                 return await player.disconnect()
             await player.process_next()
