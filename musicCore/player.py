@@ -244,7 +244,7 @@ class MusicPlayer(Player[ClientUser]):
                     if t.identifier and t.identifier == s.identifier:
                         continue
 
-                    track_return.append(t)
+                    track_return.append(s)
 
                 ts.clear()
                 self.queue.autoplay.extend(track_return)
