@@ -249,8 +249,6 @@ class MusicPlayer(Player[ClientUser]):
                 ts.clear()
                 self.queue.autoplay.extend(track_return)
 
-                logger.info(self.queue.autoplay)
-
                 try:
                     return self.queue.autoplay.popleft()
                 except:
