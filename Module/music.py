@@ -224,7 +224,7 @@ class Music(commands.Cog):
             player.queue.autoplay.clear()
         await inter.edit_original_response(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
 
-    @commands.command(name="autoplay",description="Chế độ tự động phát (Bậ:sot / Tắt)", aliases=["ap"])
+    @commands.command(name="autoplay",description="Chế độ tự động phát (Bật / Tắt)", aliases=["ap"])
     @has_player()
     @check_voice()
     async def autoplay(self, inter: ApplicationCommandInteraction):
