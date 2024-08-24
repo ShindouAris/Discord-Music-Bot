@@ -145,6 +145,9 @@ class Music(commands.Cog):
 
         if not begined:
             await player.process_next()
+            player.update_controller_task = self.bot.loop.create_task(player.update_controller())
+        else:
+            await player.controller()
 
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.command(name="stop", description="Dừng phát nhạc")
@@ -155,15 +158,14 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         if player.queue.autoplay.__len__() != 0:
             player.queue.autoplay.clear()
-        await player.stop()
-        await player.disconnect(force=True)
+        await player.stopPlayer()
+        await player.destroy_player_controller()
         await inter.send(
             embed=Embed(
                 title="⏹️ Đã dừng phát nhạc",
                 color=0x00FFFF
             ), flags=MessageFlags(suppress_notifications=True)
         )
-
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.slash_command(name="stop", description="Dừng phát nhạc")
     @commands.guild_only()
@@ -174,11 +176,8 @@ class Music(commands.Cog):
         player: MusicPlayer = ctx.author.guild.voice_client
         if player.queue.autoplay.__len__() != 0:
             player.queue.autoplay.clear()
-        try:
-            await player.stop()
-            await player.disconnect(force=True)
-        except AttributeError:
-            pass
+        await player.stopPlayer()
+        await player.destroy_player_controller()
         await ctx.edit_original_response(
                 embed=Embed(
                     title="⏹️ Đã dừng phát nhạc",
@@ -198,6 +197,7 @@ class Music(commands.Cog):
             return
         await player.pause()
         await inter.send(f"Đã tạm dừng bài hát", flags=MessageFlags(suppress_notifications=True))
+        await player.controller()
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.slash_command(name="pause", description="Tạm dừng bài hát")
@@ -212,6 +212,7 @@ class Music(commands.Cog):
             return
         await player.pause()
         await inter.edit_original_response(f"Đã tạm dừng bài hát", flags=MessageFlags(suppress_notifications=True))
+        await player.controller()
 
     @commands.slash_command(name="autoplay",description="Chế độ tự động phát (Bật / Tắt)")
     @has_player()
@@ -233,6 +234,7 @@ class Music(commands.Cog):
         if not player.is_autoplay_mode and player.queue.autoplay:
             player.queue.autoplay.clear()
         await inter.send(f"Đã {'kích hoạt' if player.is_autoplay_mode else 'vô hiệu hóa'} chế độ tự động thêm bài hát", flags=MessageFlags(suppress_notifications=True))
+        await player.controller()
 
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @commands.command(name="resume", description="Tiếp tục phát bài hát")

@@ -2,15 +2,18 @@ import asyncio
 import traceback
 
 import mafic.errors
-from mafic import Track, Player
+from mafic import Track, Player, PlayerNotConnected
 from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
 from collections import deque
 from typing import Optional
-from disnake.abc import Messageable
-from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags, Color
+from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags, utils, TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable
 from utils.conv import time_format, trim_text, music_source_image
 from logging import getLogger
+from datetime import datetime, timedelta
+from typing import Union
+
+MessageableChannel = Union[TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable]
 
 LOADFAILED = Embed(
     title="❌ Đã có lỗi xảy ra khi tìm kiếm bài hát được yêu cầu",
@@ -88,10 +91,13 @@ class MusicPlayer(Player[ClientUser]):
         self.locked = False
         self.queue: Queue = Queue()
         self.player_channel = channel
-        self.NotiChannel: Optional[Messageable] = None
+        self.NotiChannel: Optional[MessageableChannel] = None
         self.message: Optional[Message] = None
         self.nightCore = False
         self.is_autoplay_mode = False
+        self.player_controller: Optional[Message] = None
+        self.locker = asyncio.Lock()
+        self.update_controller_task: asyncio.Task = None
 
     async def sendMessage(self, **kwargs):
         try:
@@ -106,23 +112,28 @@ class MusicPlayer(Player[ClientUser]):
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
-        if self.channel is not None:
-            await self.sendMessage(embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,
-                                                description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`",
-                                                color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}",
-                                                icon_url=music_source_image(track.source.lower())), flags=MessageFlags(suppress_notifications=True))
         await self.play(track, replace=True)
+        await self.controller()
 
     async def playprevious(self):
         track = self.queue.previous()
         if track is None:
             return False
         await self.play(track, replace=True)
-        if self.channel is not None:
-            await self.sendMessage(embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,
-                                                description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`",
-                                                color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}",
-                                                icon_url=music_source_image(track.source.lower())), flags=MessageFlags(suppress_notifications=True))
+        await self.controller()
+    
+    async def stopPlayer(self):
+        try:
+            await self.stop()
+        except PlayerNotConnected:
+             pass
+        finally:
+            self.queue.played.clear()
+            self.queue.autoplay.clear()
+            self.queue.next_track.clear()
+            self.queue.is_playing = None
+            await self.disconnect(force=True)
+            await self.destroy_player_controller()
 
     async def process_next(self):
         track = self.queue.process_next()
@@ -132,11 +143,39 @@ class MusicPlayer(Player[ClientUser]):
             if self.channel is not None:
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
             await self.disconnect(force=True)
+            await self.destroy_player_controller()
             return
         await self.play(track, replace=True)
-        if self.channel is not None and self.queue.loop != LoopMODE.SONG:
-            await self.sendMessage(flags=MessageFlags(suppress_notifications=True), embed=Embed(title=f"{trim_text(track.title, 32)}", url=track.uri ,description=f"`{track.source.capitalize()} | {track.author} | {time_format(track.length) if not track.stream else '🔴 LIVESTREAM'}`", color=Color.brand_green()).set_thumbnail(url=track.artwork_url).set_author(name=f"{track.source.capitalize()}", icon_url=music_source_image(track.source.lower())))
+        await self.controller()
 
+    async def controller(self):
+        async with self.locker:
+            replace = True
+            if self.player_controller is None:
+                replace = False
+            elif self.player_controller.created_at.timestamp() + 180 < utils.utcnow().timestamp():
+                replace = False
+            elif self.NotiChannel is None:
+                ...
+            elif self.player_controller.channel.id != self.NotiChannel.id:
+                replace = False
+            try:
+                if replace:
+                    self.player_controller = await self.player_controller.edit(embed = self.render_player())
+                else:
+                    if self.player_controller is not None:
+                        await self.player_controller.delete()
+                    if self.NotiChannel is not None:    
+                        self.player_controller = await self.NotiChannel.send(embed = self.render_player(), flags=MessageFlags(suppress_notifications=True))
+            except:
+                self.player_controller = None
+                self.NotiChannel = None
+    
+    async def update_controller(self):
+        while True:
+            await asyncio.sleep(20)
+            await self.controller()
+            
     async def get_auto_tracks(self):
         try:
             return self.queue.autoplay.popleft()
@@ -253,6 +292,58 @@ class MusicPlayer(Player[ClientUser]):
                     return self.queue.autoplay.popleft()
                 except:
                     return None
+
+    async def destroy_player_controller(self):
+        async with self.locker:
+            if self.player_controller is None:
+                return
+            try:
+                self.player_controller = await self.player_controller.delete()
+            except:
+                self.player_controller = None
+        self.update_controller_task.cancel()
+
+    def render_player(self):    
+        embed = Embed()
+        embed.set_author(name="Đang phát" if not self.paused else "Tạm dừng", icon_url=music_source_image(self.current.source.lower()))
+
+        txt = ""
+
+        txt +=  f"> [`{trim_text(self.current.title, 18)}`]({self.current.uri}) - {f'Kết thúc sau: <t:{int((datetime.now() + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused else 'Tạm dừng'}\n" \
+                f"> Kênh thoại: {self.channel.mention} \n" \
+                f"> Âm lượng: {self._volume}%\n"
+        
+        if self.endpoint:
+            endpoint = self.endpoint
+        else:
+            endpoint = "Auto"
+
+        if self.ping:
+            txt += f"> Độ trễ đến máy chủ discord `{endpoint}`: {self.ping}ms\n"
+        else:
+            txt += f"> Độ trễ đến máy chủ discord `{endpoint}`: N/A\n"
+
+        if self.nightCore:
+            txt += f"> Đang bật nightcore \n"
+        
+
+        if self.queue.next_track:
+            txt += f"> Các bài hát còn lại trong hàng đợi: {self.queue.next_track.__len__()}\n"
+
+        if self.queue.loop:
+            if self.queue.loop == LoopMODE.SONG:
+                txt += f"> Đang phát lặp lại bài hát: {trim_text(self.queue.is_playing.title, 5)}\n"
+            elif self.queue.loop == LoopMODE.PLAYLIST:
+                txt += f"> Đang phát lặp lại hàng đợi\n"
+        
+        if self.is_autoplay_mode:
+            txt += f"> [`Thử Nghiệm`] Chế độ tự động thêm bài hát `đang bật`\n"
+        
+        embed.description = txt
+        embed.set_thumbnail(url=self.current.artwork_url)
+        embed.set_footer(text=f"Máy chủ âm nhạc hiện tại: {self.node.label.capitalize()}", icon_url="https://cdn.discordapp.com/emojis/1140221179920138330.webp?size=128&quality=lossless")
+        
+        return embed
 
 class QueueInterface(ui.View):
 
