@@ -20,7 +20,7 @@ class Music(commands.Cog):
 
     @check_voice()
     @commands.command(name="play", description="Chơi một bài hát", aliases=["p"])
-    async def play_legacy(self, inter: ApplicationCommandInteraction, search: str):
+    async def play_legacy(self, inter: ApplicationCommandInteraction, *,search: str):
         await self.play.callback(self=self, inter=inter, search=search)
 
     @check_voice()
@@ -438,7 +438,7 @@ class Music(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @has_player()
     @check_voice()
-    @commands.slash_command(name="volume", description="Điều chỉnh âm lượng bài hát", options=[Option(name="volume", description="Chọn từ 5 đến 150",min_value=5.0, max_value=150.0)])
+    @commands.slash_command(name="volume", description="Điều chỉnh âm lượng bài hát", options=[Option(name="volume", description="Chọn từ 5 đến 150", min_value=5.0, max_value=150.0)])
     async def volume(self, inter: ApplicationCommandInteraction, volume: int = None):
         player: MusicPlayer = inter.author.guild.voice_client
         embed = Embed()
@@ -566,34 +566,6 @@ class Music(commands.Cog):
         await inter.edit_original_response(embed=disnake.Embed(description=f"Đã {txt} tính năng nightcore\n -# Tính năng này để tăng âm sắc và tốc độ cho bài hát"),
                                            flags=MessageFlags(suppress_notifications=True))
 
-    @has_player()
-    @check_voice()
-    @commands.slash_command(name="change_node", description="Thay đổi máy chủ âm nhạc", options=[Option(name="server", description="Máy chủ để đổi", required=True)])
-    async def change_node(self, inter: ApplicationCommandInteraction, server):
-        if server not in self.bot.available_nodes:
-            raise GenericError(f"Máy chủ âm nhạc {server} không khả dụng")
-
-        player: MusicPlayer = inter.author.guild.voice_client
-
-        if server == player.node.label:
-            raise GenericError(f"Trình phát đã ở trên máy chủ âm nhạc này rồi")
-
-        await player.transfer_to(server)
-
-    @change_node.autocomplete("server")
-    async def node_suggestion(self, inter: disnake.Interaction, query: str):
-        player: MusicPlayer = inter.author.guild.voice_client
-        listNode: list[mafic.Node] = self.bot.available_nodes
-        if not listNode:
-            return None
-        if not query:
-            return [node.label for node in listNode if
-                    node != player.node and query.lower() in node.label.lower() and node.available]
-
-        return [node.label for node in listNode if node != player.node
-                and query.lower() in node.label.lower() and node.available]
-
-
     @commands.Cog.listener()
     async def on_track_end(self, event: TrackEndEvent[MusicPlayer]):
         player = event.player
@@ -641,10 +613,13 @@ class Music(commands.Cog):
 
             if check:
                 return
-
-            await player.stop()
-            await player.disconnect(force=True)
-            await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
+            try:
+                await player.stop()
+            except mafic.PlayerNotConnected:
+                return
+            finally:
+                await player.disconnect(force=True)
+                await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
 
 def setup(bot: ClientUser):
     bot.add_cog(Music(bot))
