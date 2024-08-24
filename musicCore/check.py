@@ -11,11 +11,14 @@ def check_voice():
 
         guild = inter.guild
 
-        try:
-            if inter.author.id not in inter.author.voice.channel.voice_states:
-                raise NoVoice()
-        except AttributeError:
-            pass
+        if not inter.author.voice:
+            raise NoVoice()
+
+        # try:
+        #     if inter.author.id not in inter.author.voice.channel.voice_states:
+        #         raise NoVoice()
+        # except AttributeError:
+        #     pass
 
         if not guild.me.voice:
 
