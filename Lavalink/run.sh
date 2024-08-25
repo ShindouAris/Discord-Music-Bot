@@ -1,4 +1,3 @@
-@echo off
-java -jar Lavalink.jar
+java -jar ./Lavalink/Lavalink.jar
 
 read -p "Bấm enter để tiếp tục"
