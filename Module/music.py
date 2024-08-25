@@ -94,10 +94,10 @@ class Music(commands.Cog):
                         embed.set_author(name=result.tracks[0].source.capitalize(), icon_url=music_source_image(result.tracks[0].source.lower()))
                         embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
                         embed.set_thumbnail(result.tracks[0].artwork_url)
-                        try:
-                            await inter.edit_original_response(embed=embed, delete_after=5,view=None, flags=MessageFlags(suppress_notifications=True))
-                        except AttributeError:
-                            await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                        # try:
+                        #     await inter.edit_original_response(embed=embed, delete_after=5,view=None, flags=MessageFlags(suppress_notifications=True))
+                        # except AttributeError:
+                        #     await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
                     else:
                         track: Track = result.tracks[0]
                         player.queue.add_next_track(track)
@@ -142,6 +142,8 @@ class Music(commands.Cog):
             await inter.edit_original_response(embed=embed)
         except (disnake.InteractionNotEditable, AttributeError):
             await inter.send(embed=embed, flags=MessageFlags(suppress_notifications=True), delete_after=15)
+            await asyncio.sleep(2)
+            await inter.message.edit(suppress_embeds=True, allowed_mentions=False)
 
         if not begined:
             await player.process_next()
@@ -615,13 +617,9 @@ class Music(commands.Cog):
 
             if check:
                 return
-            try:
-                await player.stop()
-            except mafic.PlayerNotConnected:
-                return
-            finally:
-                await player.disconnect(force=True)
-                await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
+            
+            await player.stopPlayer()
+            await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
 
 def setup(bot: ClientUser):
     bot.add_cog(Music(bot))
