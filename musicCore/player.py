@@ -306,10 +306,11 @@ class MusicPlayer(Player[ClientUser]):
     def render_player(self):    
         embed = Embed()
         embed.set_author(name="Đang phát" if not self.paused else "Tạm dừng", icon_url=music_source_image(self.current.source.lower()))
-
+        embed.title = f"`{trim_text(self.current.title, 24)}`"
+        embed.url = self.current.uri
         txt = ""
 
-        txt +=  f"> [`{trim_text(self.current.title, 18)}`]({self.current.uri}) - {f'Kết thúc sau: <t:{int((datetime.now() + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused else 'Tạm dừng'}\n" \
+        txt +=  f"> {f'Kết thúc sau: <t:{int((datetime.now() + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused or not self.current.stream else 'Trực tiếp' if self.current.stream and not self.paused else ''}\n" \
                 f"> Kênh thoại: {self.channel.mention} \n" \
                 f"> Âm lượng: {self._volume}%\n"
         
