@@ -1,6 +1,6 @@
-server: # REST and WS server
-  port: 4869
-  address: 0.0.0.0
+server: 
+  port: 80 # DO NOT CHANGE
+  address: 0.0.0.0 # DO NOT CHANGE
 spring:
   main:
     banner-mode: log
@@ -13,7 +13,7 @@ lavalink:
     - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.0"
       snapshot: false
   server:
-    password: "localhost"
+    password: "localhost" # DO NOT CHANGE
     sources:
       youtube: false
       bandcamp: true
@@ -99,12 +99,12 @@ plugins:
       - "ytsearch:%QUERY%"
       - "scsearch:%QUERY%"
     sources:
-      spotify: true
+      spotify: false # SET TO true IF U HAVE DONE THESE TASK (1, 2)
       applemusic: true
       deezer: false
-    spotify:
-      clientId: "a452a60275234406a3b43b84b26785a6"
-      clientSecret: "e0db429aca79461796797af12ec8094a"
+    spotify: 
+      clientId: "" # 1 ADD YOURSPOTIFY CLIENTID (https://developer.spotify.com/dashboard)
+      clientSecret: "" # 2 ADD YOURSPOTIFY CLIENTSEC (https://developer.spotify.com/dashboard)
       countryCode: "US"
     applemusic:
       countryCode: "US"
