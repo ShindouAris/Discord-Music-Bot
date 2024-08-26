@@ -20,8 +20,18 @@ class LavalinkInfo(TypedDict):
     label: str
     secure: bool
 
-with open('lavalink.json', 'r') as f:
-    data: list[LavalinkInfo] = json.loads(f.read())
+try:
+    with open('lavalink.json', 'r') as f:
+        data: list[LavalinkInfo] = json.loads(f.read())
+except FileNotFoundError: # CONNECT TO LOCALHOST LAVALINK IF lavalink.json NOT FOUND
+    data: list[LavalinkInfo] = [
+    {
+      "host": "localhost",
+      "port": 80,
+      "label": "LOCALHOST",
+      "password": "localhost"
+    }
+] # NOT RECOMMENDED TO PUT YOUR LAVALINK HERE
 
 gc.collect()
 
@@ -137,7 +147,7 @@ def load():
     DISCORD_TOKEN = environ.get("TOKEN")
 
     intents = disnake.Intents()
-    intents.message_content = True
+    intents.message_content = True # Chuyển thành false nếu bot không bật intent số 3 (MESSAGE CONTENT INTENT)
     intents.messages = True
     intents.guilds = True
     intents.voice_states = True
