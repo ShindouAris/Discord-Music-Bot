@@ -32,6 +32,11 @@ class LoopMODE(enumerate):
     PLAYLIST = 2
 
 
+class STATE(enumerate):
+    OFF = 0
+    ON = 1
+    
+
 class Queue:
     def __init__(self):
         self.is_playing: Optional[Track] = None
@@ -39,6 +44,7 @@ class Queue:
         self.played: deque = deque(maxlen=30)
         self.loop = LoopMODE.OFF
         self.autoplay: deque = deque(maxlen=70)
+        self.keep_connect = STATE.OFF
 
     def get_next_track(self):
         return [track for track in self.next_track]
@@ -53,7 +59,7 @@ class Queue:
             self.played.append(self.is_playing)
             self.is_playing = None
 
-        if self.loop == LoopMODE.PLAYLIST and self.next_track.__len__() == 0:
+        if self.loop == LoopMODE.PLAYLIST or self.keep_connect == STATE.ON and self.next_track.__len__() == 0:
             for track in self.played:
                 self.next_track.append(track)
             self.played.clear()
@@ -89,11 +95,13 @@ class MusicPlayer(Player[ClientUser]):
     def __init__(self, client: ClientUser, channel: Connectable):
         super().__init__(client, channel)
         self.locked = False
+        self.start_time = None
         self.queue: Queue = Queue()
         self.player_channel = channel
         self.NotiChannel: Optional[MessageableChannel] = None
         self.message: Optional[Message] = None
         self.nightCore = False
+        self.keep_connection = STATE.OFF
         self.is_autoplay_mode = False
         self.player_controller: Optional[Message] = None
         self.locker = asyncio.Lock()
@@ -134,6 +142,7 @@ class MusicPlayer(Player[ClientUser]):
             self.queue.is_playing = None
             await self.disconnect(force=True)
             await self.destroy_player_controller()
+            self.client.logger.info(f"Trình phát được ngắt kết nối khỏi máy chủ: {self.guild.id}")
 
     async def process_next(self):
         track = self.queue.process_next()
@@ -142,9 +151,11 @@ class MusicPlayer(Player[ClientUser]):
         if track is None:
             if self.channel is not None:
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
-            await self.disconnect(force=True)
-            await self.destroy_player_controller()
+            await self.stopPlayer()
             return
+        if track.stream:
+            self.start_time = None
+        self.start_time = datetime.now()
         await self.play(track, replace=True)
         await self.controller()
 
@@ -310,7 +321,7 @@ class MusicPlayer(Player[ClientUser]):
         embed.url = self.current.uri
         txt = ""
 
-        txt +=  f"> {f'Kết thúc sau: <t:{int((datetime.now() + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused or not self.current.stream else 'Trực tiếp' if self.current.stream and not self.paused else ''}\n" \
+        txt +=  f"> {f'Kết thúc sau: <t:{int((self.start_time + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused or not self.current.stream else 'Trực tiếp' if self.current.stream and not self.paused else ''}\n" \
                 f"> Kênh thoại: {self.channel.mention} \n" \
                 f"> Âm lượng: {self._volume}%\n"
         
@@ -338,7 +349,10 @@ class MusicPlayer(Player[ClientUser]):
                 txt += f"> Đang phát lặp lại hàng đợi\n"
         
         if self.is_autoplay_mode:
-            txt += f"> [`Thử Nghiệm`] Chế độ tự động thêm bài hát `đang bật`\n"
+            txt += f"> [`Thử Nghiệm`] Chế độ tự động thêm bài hát `Bật`\n"
+
+        if self.keep_connection:
+            txt += f"> [`Thử Nghiệm`] Chế độ phát liên tục: `Bật`\n"
         
         embed.description = txt
         embed.set_thumbnail(url=self.current.artwork_url)
