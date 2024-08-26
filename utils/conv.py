@@ -2,6 +2,7 @@ import datetime
 from typing import Union
 from re import compile
 YOUTUBE_VIDEO_REG = compile(r"(https?://)?(www\.)?youtube\.(com|nl)/watch\?v=([-\w]+)")
+URLREGEX = compile(r'^https?:\/\/[^\s/$.?#].[^\s]*$')
 
 replaces = [
     ('&quot;', '"'),
