@@ -6,10 +6,10 @@ from datetime import timedelta, datetime
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState
-from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter
+from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter, SearchType
 from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction, SelectInteraction, STATE
 from musicCore.check import check_voice, has_player
-from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image, URLREGEX
+from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image, URLREGEX, YOUTUBE_VIDEO_REG
 from re import match
 from utils.error import GenericError
 
@@ -17,22 +17,36 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot: ClientUser = bot
 
+    search_list = {
+        "youtube": SearchType.YOUTUBE,
+        "youtube music": SearchType.YOUTUBE_MUSIC,
+        "soundcloud": SearchType.SOUNDCLOUD,
+        "spotify": SearchType.SPOTIFY_SEARCH,
+        "applemusic": SearchType.APPLE_MUSIC
+    }
+    SEARCH_LIST_AUTOCOMPLETE = ["Youtube", "Youtube Music", "SoundCloud", "Spotify", "AppleMusic"]
+
     @check_voice()
     @commands.command(name="play", description="Chơi một bài hát", aliases=["p"])
-    async def play_legacy(self, inter: ApplicationCommandInteraction, *,search: str):
+    async def play_legacy(self, inter: ApplicationCommandInteraction, *, search: str):
         await self.play.callback(self=self, inter=inter, search=search)
 
     @check_voice()
     @commands.slash_command(name="play", description="Chơi một bản nhạc", options=[
         Option(name="search",
                description="Tìm kiếm bài hát bằng tên hoặc url",
-               required=True)])
-    async def play(self, inter: ApplicationCommandInteraction, search: str):
+               required=True), 
+        Option(name="source", description="Source để tìm kiếm bài hát", required=False)])
+    async def play(self, inter: ApplicationCommandInteraction, search: str, source = None):
         try:
             await inter.response.defer(ephemeral=True)
         except AttributeError:
             pass
-
+        
+        if match(YOUTUBE_VIDEO_REG, search) and not self.bot.env.get("PLAY_YOUTUBE_SOURCE", default=True):
+            raise GenericError("Hiện tại các link youtube không được kích hoạt...")
+        
+            
         if self.bot.available_nodes.__len__() == 0:
             raise GenericError("Không có máy chủ âm nhạc khả dụng")
 
@@ -44,8 +58,16 @@ class Music(commands.Cog):
 
         player.NotiChannel = inter.channel
 
+        if source is not None:
+            search_type = self.search_list.get(source.lower())
+        else:
+            if not self.bot.env.get("PLAY_YOUTUBE_SOURCE", default=True):
+                search_type = SearchType.SOUNDCLOUD
+            else: 
+                search_type = SearchType.YOUTUBE
+
         try:
-            result = await player.fetch_tracks(search)
+            result = await player.fetch_tracks(search, search_type=search_type)
 
             if isinstance(result, Playlist):
                     view = SelectInteraction(
@@ -136,6 +158,7 @@ class Music(commands.Cog):
         except:
             embed = LOADFAILED
             self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild.id})")
+            await player.stopPlayer()
         try:
             await inter.edit_original_response(embed=embed)
         except ( InteractionNotEditable, AttributeError):
@@ -144,12 +167,22 @@ class Music(commands.Cog):
                 await asyncio.sleep(1)
                 await inter.message.edit(suppress_embeds=True, allowed_mentions=False)
 
+        if embed == LOADFAILED:
+            return await player.stopPlayer()
+
         if not begined:
             await player.process_next()
             player.update_controller_task = self.bot.loop.create_task(player.update_controller())
             self.bot.logger.info(f"Trình phát được khởi tạo tại máy chủ {inter.guild.id}")
         else:
             await player.controller()
+
+    @play.autocomplete("source")
+    async def source_autocomplete(self, inter: Interaction, query: str):
+        if query:
+            return [sc for sc in self.SEARCH_LIST_AUTOCOMPLETE if query.lower() in sc]
+        
+        return [sc for sc in self.SEARCH_LIST_AUTOCOMPLETE]
 
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.command(name="stop", description="Dừng phát nhạc")
@@ -640,7 +673,7 @@ class Music(commands.Cog):
             if check:
                 return
             
-            if player.keep_connection:
+            if player.keep_connection == STATE.ON:
                 return
             
             await player.stopPlayer()
