@@ -10,7 +10,7 @@ lavalink:
       repository: "https://jitpack.io"
     - dependency: "com.github.TopiSenpai.LavaSrc:lavasrc-plugin:3.1.7"
       repository: "https://jitpack.io"
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.7.2"
       snapshot: false
   server:
     password: "localhost" # DO NOT CHANGE
@@ -88,10 +88,6 @@ plugins:
       playlistLoading: false
       videoLoading: false
       searching: false
-
-  # youtube:
-  #   enabled: true
-  #   clients: ["MUSIC", "ANDROID", "WEB", "TVHTML5EMBEDDED"]
 
   lavasrc:
     providers:
