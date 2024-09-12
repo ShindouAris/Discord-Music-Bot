@@ -1,7 +1,7 @@
 [
     {
       "host": "localhost",
-      "port": 4869,
+      "port": 80,
       "label": "HOSTNAME",
       "password": "localhost"
     }
