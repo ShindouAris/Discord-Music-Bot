@@ -7,7 +7,7 @@ from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
 from collections import deque
 from typing import Optional
-from disnake import Message, MessageInteraction, ui, SelectOption, utils, ButtonStyle, Embed, MessageFlags, utils, TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable
+from disnake import Message, MessageInteraction, ui, SelectOption, ButtonStyle, Embed, MessageFlags, utils, TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable
 from utils.conv import time_format, trim_text, music_source_image
 from logging import getLogger
 from datetime import datetime, timedelta
@@ -120,6 +120,7 @@ class MusicPlayer(Player[ClientUser]):
                 await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
+        self.start_time = datetime.now()
         await self.play(track, replace=True)
         await self.controller()
 
@@ -127,6 +128,7 @@ class MusicPlayer(Player[ClientUser]):
         track = self.queue.previous()
         if track is None:
             return False
+        self.start_time = datetime.now()
         await self.play(track, replace=True)
         await self.controller()
     
@@ -145,7 +147,12 @@ class MusicPlayer(Player[ClientUser]):
             self.client.logger.info(f"Trình phát được ngắt kết nối khỏi máy chủ: {self.guild.id}")
 
     async def process_next(self):
-        track = self.queue.process_next()
+        if self.keep_connection == STATE.ON and self.is_autoplay_mode:
+            track = await self.get_auto_tracks()
+        elif self.keep_connection == STATE.ON and not self.is_autoplay_mode:
+            track = self.queue.process_next()
+        else:
+            track = self.queue.process_next()
         if self.is_autoplay_mode and track is None:
             track = await self.get_auto_tracks()
         if track is None:
@@ -321,7 +328,7 @@ class MusicPlayer(Player[ClientUser]):
         embed.url = self.current.uri
         txt = ""
 
-        txt +=  f"> {f'Kết thúc sau: <t:{int((self.start_time + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R>' if not self.paused or not self.current.stream else 'Trực tiếp' if self.current.stream and not self.paused else ''}\n" \
+        txt +=  f"> {f'Kết thúc sau: <t:{int((self.start_time + timedelta(milliseconds=self.current.length - self.current.position)).timestamp())}:R> ({time_format(self.current.length)})' if not self.paused or not self.current.stream else 'Trực tiếp' if self.current.stream and not self.paused else ''}\n" \
                 f"> Kênh thoại: {self.channel.mention} \n" \
                 f"> Âm lượng: {self._volume}%\n"
         
