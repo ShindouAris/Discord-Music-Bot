@@ -70,6 +70,11 @@ def time_format(milliseconds: Union[int, float], use_names: bool = False) -> str
 
     return strings
 
+class LoopMODE(enumerate):
+    OFF = 0
+    SONG = 1
+    PLAYLIST = 2
+
 
 time_names = ["seconds", "minutes", "hours"]
 
