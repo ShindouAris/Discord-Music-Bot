@@ -1,8 +1,11 @@
 [
     {
-      "host": "localhost",
-      "port": 80,
-      "label": "HOSTNAME",
-      "password": "localhost"
+      "name": "LOCAL",
+      "config": {
+        "host": "localhost",
+        "port": 80,
+        "password": "localhost",
+        "secure": false
+      }
     }
-  ]
+]

@@ -11,25 +11,31 @@ from dotenv import load_dotenv
 import logging
 import gc
 from mafic import NodePool, Node
-from typing import TypedDict
+from typing import TypedDict, List
 
-class LavalinkInfo(TypedDict):
+class Config(TypedDict):
     host: str
     port: int
     password: str
-    label: str
     secure: bool
+
+class LavalinkConfig(TypedDict):
+    name: str
+    config: Config
 
 try:
     with open('lavalink.json', 'r') as f:
-        data: list[LavalinkInfo] = json.loads(f.read())
+        data: List[LavalinkConfig] = json.loads(f.read())
 except FileNotFoundError: # CONNECT TO LOCALHOST LAVALINK IF lavalink.json NOT FOUND
-    data: list[LavalinkInfo] = [
+    data: List[LavalinkConfig] = [
     {
-      "host": "localhost",
-      "port": 80,
-      "label": "LOCALHOST",
-      "password": "localhost"
+      "name": "Lavalink_Local",
+      "config": {
+          "host": "localhost",
+          "port": 80,
+          "password": "localhost",
+          "secure": False,
+      }
     }
 ] # NOT RECOMMENDED TO PUT YOUR LAVALINK HERE
 
@@ -62,34 +68,19 @@ class ClientUser(commands.AutoShardedBot):
                 session_key = None
 
             for node in data:
-                for cc in range(4):
                     try:
                         await self.nodeClient.create_node(
-                            host=node['host'],
-                            port=node['port'],
-                            password=node['password'],
-                            label=node['label'],
-                            secure=False if node['port'] != 443 else True,
-                            resuming_session_id=session_key,
-                            timeout=1.5
+                            label=node["name"],
+                            password=node["config"]["password"],
+                            port=node["config"]["port"],
+                            host=node["config"]["host"],
+                            secure=node["config"]["secure"],
                         )
                     except Exception as e:
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
                         self.unavailable_nodes.append(node)
                     else:
                         break
-
-    async def reconnect_node(self, host, port, password, label, resume_session_key = None):
-        try:
-            await self.nodeClient.create_node(
-                host=host,
-                password=password,
-                label=label,
-                port=port,
-                resuming_session_id=resume_session_key
-            )
-        except Exception as e:
-            logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
 
     async def on_node_ready(self, node: Node):
         with open("lavalink_session_key.ini", "w") as session_key_value:
@@ -100,13 +91,16 @@ class ClientUser(commands.AutoShardedBot):
         logger.warning(f"Mất kết nối đến máy chủ âm nhạc: {node.label}")
         self.available_nodes.remove(node)
         await self.nodeClient.remove_node(node)
-        await self.reconnect_node(node.host, node.port, node.__password, node.label)
 
     async def on_ready(self):
 
                 await self.change_presence(status=self.status)
 
                 logger.info(f"BOT {self.user.name} đã sẵn sàng")
+
+    def close(self):
+        logger.warning("Đã nhận tín hiệu ngắt bot và dọn dẹp môi trường")
+        return super().close()
 
     def load_modules(self):
 

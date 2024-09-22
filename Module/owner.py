@@ -35,7 +35,7 @@ class Owner(commands.Cog):
             return
 
         await inter.send("Đang tắt bot")
-        await self.bot.close()
+        self.bot.close()
 
 def setup(bot: ClientUser):
     bot.add_cog(Owner(bot))
