@@ -5,13 +5,13 @@ from datetime import timedelta, datetime
 
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
-from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState
+from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState, MessageInteraction
 from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter, SearchType
-from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, LoopMODE, VolumeInteraction, SelectInteraction, STATE
+from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, VolumeInteraction, SelectInteraction, STATE
 from musicCore.check import check_voice, has_player
-from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image, URLREGEX, YOUTUBE_VIDEO_REG
+from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image, URLREGEX, YOUTUBE_VIDEO_REG, LoopMODE
 from re import match
-from utils.error import GenericError
+from utils.error import GenericError, NoPlayer, DiffVoice
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -336,7 +336,7 @@ class Music(commands.Cog):
     @commands.cooldown(3, 10, commands.BucketType.guild)
     @has_player()
     @check_voice()
-    @commands.command(name="previous", description="Phát lại bài hát trước đó")
+    @commands.command(name="previous", aliases = ["back", "b"],description="Phát lại bài hát trước đó")
     async def prev(self, inter: ApplicationCommandInteraction):
         player: MusicPlayer = inter.author.guild.voice_client
         result = await player.playprevious()
@@ -678,6 +678,38 @@ class Music(commands.Cog):
             
             await player.stopPlayer()
             await player.sendMessage(content="Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống", flags=MessageFlags(suppress_notifications=True))
+
+    @commands.Cog.listener("on_button_click")
+    async def process_player_interaction(self, interaction: MessageInteraction):
+        if interaction.guild.id is None:
+            return
+        if interaction.user.bot:
+            return
+        customID = interaction.component.custom_id
+        if not customID.startswith("player_controller"):
+            return
+        player: MusicPlayer = interaction.author.guild.voice_client
+
+        if not player:
+            raise NoPlayer()
+        if not (interaction.author.voice and interaction.author.id in interaction.guild.me.voice.channel.voice_states):
+            raise DiffVoice()
+        match customID:
+            case "player_controller_pause_resume_btn":
+                await player.pause_player()
+                await interaction.send("Tương tác thành công", ephemeral=True)
+                await player.controller()
+            case "player_controller_prev_track_btn":
+                await player.playprevious()
+                await interaction.send("Tương tác thành công", ephemeral=True)
+            case "player_controller_stop_btn":
+                await player.stopPlayer()
+                await interaction.send("Tương tác thành công", ephemeral=True)
+            case "player_controller_next_track_btn":
+                await player.process_next()
+                await interaction.send("Tương tác thành công", ephemeral=True)
+            case _:
+                raise GenericError("Tương tác không hợp lệ")
 
 def setup(bot: ClientUser):
     bot.add_cog(Music(bot))
