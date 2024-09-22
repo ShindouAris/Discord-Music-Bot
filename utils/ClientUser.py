@@ -75,6 +75,8 @@ class ClientUser(commands.AutoShardedBot):
                             port=node["config"]["port"],
                             host=node["config"]["host"],
                             secure=node["config"]["secure"],
+                            resuming_session_id=session_key,
+                            timeout=10
                         )
                     except Exception as e:
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
