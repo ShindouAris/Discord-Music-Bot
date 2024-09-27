@@ -685,6 +685,7 @@ class Music(commands.Cog):
             return
         if interaction.user.bot:
             return
+        await interaction.response.defer(ephemeral=True)
         customID = interaction.component.custom_id
         if not customID.startswith("player_controller"):
             return
@@ -697,17 +698,13 @@ class Music(commands.Cog):
         match customID:
             case "player_controller_pause_resume_btn":
                 await player.pause_player()
-                await interaction.send("Tương tác thành công", ephemeral=True)
                 await player.controller()
             case "player_controller_prev_track_btn":
                 await player.playprevious()
-                await interaction.send("Tương tác thành công", ephemeral=True)
             case "player_controller_stop_btn":
                 await player.stopPlayer()
-                await interaction.send("Tương tác thành công", ephemeral=True)
             case "player_controller_next_track_btn":
                 await player.process_next()
-                await interaction.send("Tương tác thành công", ephemeral=True)
             case _:
                 raise GenericError("Tương tác không hợp lệ")
 
