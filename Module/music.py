@@ -6,7 +6,8 @@ from datetime import timedelta, datetime
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
 from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState, MessageInteraction
-from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter, SearchType
+from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter, SearchType, TrackExceptionEvent, \
+    TrackStuckEvent
 from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, VolumeInteraction, SelectInteraction, STATE
 from musicCore.check import check_voice, has_player
 from utils.conv import trim_text, time_format, string_to_seconds, percentage, music_source_image, URLREGEX, YOUTUBE_VIDEO_REG, LoopMODE
@@ -625,26 +626,25 @@ class Music(commands.Cog):
         await inter.edit_original_response(embed= Embed(description=f"Đã {txt} tính năng nightcore\n -# Tính năng này để tăng âm sắc và tốc độ cho bài hát"),
                                            flags=MessageFlags(suppress_notifications=True))
 
-    @commands.Cog.listener()
-    async def on_track_end(self, event: TrackEndEvent[MusicPlayer]):
-        player = event.player
-        reason = event.reason
-        failed = 0
-        if reason == EndReason.FINISHED:
-            await player.process_next()
-        elif reason == EndReason.LOAD_FAILED:
-            failed += 1
-            if failed >= 5:
-                self.bot.available_nodes.remove(player.node)
-                self.bot.unavailable_nodes.append(player.node)
-                await self.bot.nodeClient.remove_node(player.node)
-                failed = 0
-                return
-            await player.NotiChannel.send(f"Đã có lỗi xảy ra khi tải bài hát", flags=MessageFlags(suppress_notifications=True))
-            self.bot.logger.warning(f"Tải bài hát được yêu cầu ở máy chủ {player.guild.id} thất bại: {reason}")
-            if self.bot.available_nodes.__len__() == 0:
-                return await player.stopPlayer()
-            await player.process_next()
+    @commands.Cog.listener("on_track_end")
+    async def handling_track_end(self, event: TrackEndEvent[MusicPlayer]):
+        if event.reason == EndReason.FINISHED:
+            await event.player.process_next()
+
+
+    @commands.Cog.listener("on_track_exception")
+    async def handling_track_exception(self, event: TrackExceptionEvent[MusicPlayer]):
+        self.bot.logger.error(f"Xảy ra sự cố khi cố gắng phát bài hát: {event.track.uri} tại GUILDID {event.player.guild.id}, {event.exception['message']}")
+        await event.player.NotiChannel.send(embed=Embed(description = f"Đã có lỗi xảy ra khi tải bài hát `{event.track.uri}`\n ```java\n{event.exception['cause']}\n```"), flags=MessageFlags(suppress_notifications=True), delete_after=10)
+        if self.bot.available_nodes.__len__() == 0:
+            return await event.player.stopPlayer()
+        if event.player.queue.next_track.__len__() != 0:
+            return await event.player.process_next()
+        await event.player.stopPlayer()
+
+    @commands.Cog.listener("on_track_stuck")
+    async def handling_track_stuck(self, event: TrackStuckEvent[MusicPlayer]):
+        self.bot.logger.warning(f"Bài hát {event.track} đã xảy ra lỗi | GuildID: {event.player.guild.id} | {event.threshold_ms}ms")
 
     @commands.Cog.listener("on_voice_state_update")
     async def player_eco_mode(self, member:  Member, before:  VoiceState, after:  VoiceState):
@@ -707,6 +707,10 @@ class Music(commands.Cog):
                 await player.process_next()
             case _:
                 raise GenericError("Tương tác không hợp lệ")
+
+    @commands.Cog.listener("on_player_disconnected")
+    async def handling_disconnect_event(self):
+        self.bot.logger.info("Disconnect event deploy complete!")
 
 def setup(bot: ClientUser):
     bot.add_cog(Music(bot))

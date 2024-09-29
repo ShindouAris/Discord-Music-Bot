@@ -13,7 +13,7 @@ def render_player(player):
     embed.url = player.current.uri
     txt = ""
 
-    txt +=  f"> ⏲️ • {f'Kết thúc sau: <t:{int((player.start_time + timedelta(milliseconds=player.current.length - player.current.position)).timestamp())}:R> ({time_format(player.current.length)})' if not player.paused or not player.current.stream else 'Trực tiếp' if player.current.stream and not player.paused else ''}\n" \
+    txt +=  f"> ⏲️ • {f'Kết thúc sau: <t:{int((player.start_time + timedelta(milliseconds=player.current.length - player.current.position)).timestamp())}:R> ({time_format(player.current.length)})' if not player.paused and not player.current.stream else 'Trực tiếp' if player.current.stream and not player.paused else ''}\n" \
             f"> 🔈 • Kênh thoại: {player.channel.mention} \n" \
             f"> 🔊 • Âm lượng: {player.player_volume}%\n"
 

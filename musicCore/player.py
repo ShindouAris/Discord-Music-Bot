@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import asyncio
-import traceback
+from asyncio import Lock, sleep
+from traceback import print_exc
 
-import mafic.errors
+from mafic.errors import TrackLoadException
 from mafic import Track, Player, PlayerNotConnected
 from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
@@ -94,6 +94,7 @@ class MusicPlayer(Player[ClientUser]):
     def __init__(self, client: ClientUser, channel: Connectable):
         super().__init__(client, channel)
         self.locked = False
+        self.client: ClientUser = client
         self.start_time = None
         self.queue: Queue = Queue()
         self.player_channel = channel
@@ -103,7 +104,7 @@ class MusicPlayer(Player[ClientUser]):
         self.keep_connection = STATE.OFF
         self.is_autoplay_mode = False
         self.player_controller: Optional[Message] = None
-        self.locker = asyncio.Lock()
+        self.locker = Lock()
         self.update_controller_task: asyncio.Task = None # type: ignore
 
     @property
@@ -156,6 +157,7 @@ class MusicPlayer(Player[ClientUser]):
             self.queue.is_playing = None
             await self.disconnect(force=True)
             await self.destroy_player_controller()
+            self.client.dispatch("player_disconnected")
             self.client.logger.info(f"Trình phát được ngắt kết nối khỏi máy chủ: {self.guild.id}")
 
     async def process_next(self):
@@ -204,7 +206,7 @@ class MusicPlayer(Player[ClientUser]):
     
     async def update_controller(self):
         while True:
-            await asyncio.sleep(20)
+            await sleep(20)
             await self.controller()
             
     async def get_auto_tracks(self):
@@ -260,8 +262,8 @@ class MusicPlayer(Player[ClientUser]):
                                 continue
                         else:
                             exep = e
-                            traceback.print_exc()
-                            await asyncio.sleep(1.5)
+                            print_exc()
+                            await sleep(1.5)
                             continue
                 t = track_data
                 break
@@ -273,7 +275,7 @@ class MusicPlayer(Player[ClientUser]):
             if not ts:
                 self.locked = False
                 if exep:
-                    if isinstance(exep, mafic.TrackLoadException):
+                    if isinstance(exep, TrackLoadException):
                         errmsg =    f"Lỗi ```java\n{exep.cause}```\n" \
                                     f"Mã lỗi: `\n{exep.message}`\n" \
                                     f"Máy chủ âm nhạc `{self.node.label}`"
@@ -286,7 +288,7 @@ class MusicPlayer(Player[ClientUser]):
                     await self.sendMessage(embed = Embed(
                         description=f"**Không lấy được dữ liệu tự động phát:**\n"
                                     f"{errmsg}."), flags=MessageFlags(suppress_notifications=True), delete_after=10)
-                    await asyncio.sleep(8)
+                    await sleep(8)
                 await self.disconnect(force=True)
                 return
 

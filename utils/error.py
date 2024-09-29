@@ -1,58 +1,58 @@
-import disnake
-from disnake.ext import commands
+from disnake import VoiceChannel, AppCmdInter, ForumChannel, InteractionTimedOut, Thread, ApplicationCommandInteraction, MessageInteraction, Interaction, StageChannel, MessageFlags
+from disnake.ext.commands import Context, NotOwner, CheckFailure, MissingPermissions, CommandError, BotMissingPermissions, CommandOnCooldown, Paginator, NoPrivateMessage
 from typing import Union
-from utils.conv import *
+from utils.conv import perms_translations, time_format
 from disnake.utils import escape_mentions
 from typing import Optional
 
 
-class ClientException(commands.CheckFailure):
+class ClientException(CheckFailure):
     pass
 
-class ArgumentParsingError(commands.CommandError):
+class ArgumentParsingError(CommandError):
     def __init__(self, message):
         super().__init__(escape_mentions(message))
 
-class NoVoice(commands.CheckFailure):
+class NoVoice(CheckFailure):
     ...
 
-class MissingVoicePermissions(commands.CheckFailure):
-    def __init__(self, voice_channel: Union[disnake.VoiceChannel, disnake.StageChannel]):
+class MissingVoicePermissions(CheckFailure):
+    def __init__(self, voice_channel: Union[VoiceChannel, StageChannel]):
         self.voice_channel = voice_channel
 
-class DiffVoice(commands.CheckFailure):
+class DiffVoice(CheckFailure):
     ...
 
-class NoPlayer(commands.CheckFailure):
+class NoPlayer(CheckFailure):
     ...
 
-class GenericError(commands.CheckFailure):
+class GenericError(CheckFailure):
 
     def __init__(self, text: str, *, self_delete: int = None, delete_original: Optional[int] = None, components: list = None):
         self.text = text
         self.self_delete = self_delete
         self.delete_original = delete_original
         self.components = components
-        self.flags = disnake.MessageFlags(suppress_notifications=True)
+        self.flags = MessageFlags(suppress_notifications=True)
 
 def parse_error(
-        ctx: Union[disnake.ApplicationCommandInteraction, commands.Context, disnake.MessageInteraction],
+        ctx: Union[ApplicationCommandInteraction, Context, MessageInteraction],
         error: Exception
 ):
     error_txt = ""
         
-    if isinstance(error, commands.NotOwner):
+    if isinstance(error, NotOwner):
             error_txt = "**Chỉ nhà phát triển của tôi mới có thể sử dụng lệnh này**"
 
-    if isinstance(error, commands.BotMissingPermissions):
+    if isinstance(error, BotMissingPermissions):
             error_txt = "Tôi không có các quyền sau để thực thi lệnh này: ```\n{}```" \
                 .format(", ".join(perms_translations.get(perm, perm) for perm in error.missing_permissions))
 
-    if isinstance(error, commands.MissingPermissions):
+    if isinstance(error, MissingPermissions):
             error_txt = "Bạn không có các quyền sau để thực hiện lệnh này: ```\n{}```" \
                 .format(", ".join(perms_translations.get(perm, perm) for perm in error.missing_permissions))
                 
-    if isinstance(error, commands.NoPrivateMessage):
+    if isinstance(error, NoPrivateMessage):
             error_txt = "Lệnh này không thể chạy trên tin nhắn riêng tư."
 
     if isinstance(error, DiffVoice):
@@ -67,7 +67,7 @@ def parse_error(
     if isinstance(error, NoPlayer):
         error_txt = "**Không có trình phát nào được khởi tạo trên máy chủ này**"
         
-    if isinstance(error, commands.CommandOnCooldown):
+    if isinstance(error, CommandOnCooldown):
             remaing = int(error.retry_after)
             if remaing < 1:
                 remaing = 1
@@ -79,7 +79,7 @@ def parse_error(
     return error_txt
 
 async def send_message(
-        inter: Union[disnake.Interaction, disnake.ApplicationCommandInteraction],
+        inter: Union[Interaction, ApplicationCommandInteraction],
         text=None,
         **kwargs,
 ):
@@ -98,7 +98,7 @@ async def send_message(
         else:
             await inter.response.edit_message(content=text, **kwargs)
 
-    elif inter.response.is_done() and isinstance(inter, disnake.AppCmdInter):
+    elif inter.response.is_done() and isinstance(inter, AppCmdInter):
         await inter.edit_original_message(content=text, **kwargs)
 
     else:
@@ -110,7 +110,7 @@ async def send_message(
             is_forum = False
 
             try:
-                if isinstance(channel.parent, disnake.ForumChannel):
+                if isinstance(channel.parent, ForumChannel):
                     is_forum = True
             except AttributeError:
                 pass
@@ -129,10 +129,10 @@ async def send_message(
 
         try:
             await inter.send(text, ephemeral=True, **kwargs)
-        except disnake.InteractionTimedOut:
+        except InteractionTimedOut:
 
             try:
-                if isinstance(inter.channel, disnake.Thread):
+                if isinstance(inter.channel, Thread):
                     send_message_perm = inter.channel.parent.permissions_for(inter.guild.me).send_messages_in_threads
                 else:
                     send_message_perm = inter.channel.permissions_for(inter.guild.me).send_messages
@@ -145,7 +145,7 @@ async def send_message(
 
 
 def paginator(txt: str):
-    pages = commands.Paginator(prefix=None, suffix=None)
+    pages = Paginator(prefix=None, suffix=None)
     pages.max_size = 1910
     for line in txt.splitlines():
         if len(line) >= pages.max_size - 3:

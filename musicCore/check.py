@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from disnake.ext import commands
+from disnake.ext.commands import check
 from utils.error import NoVoice, MissingVoicePermissions, DiffVoice, NoPlayer
 from .player import MusicPlayer
 
@@ -36,7 +36,7 @@ def check_voice():
 
         return True
 
-    return commands.check(predicate)
+    return check(predicate)
 
 def has_player():
 
@@ -49,4 +49,4 @@ def has_player():
 
         return True
 
-    return commands.check(predicate)
+    return check(predicate)

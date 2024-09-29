@@ -1,9 +1,9 @@
-import disnake
+from disnake import AppCmdInter, Embed, Color, MessageFlags, NotFound, Colour, ApplicationCommandInteraction, AppCommandInter
 from disnake.ext import commands
 
 from utils.ClientUser import ClientUser
 from utils.error import ClientException, parse_error, paginator, send_message
-import traceback
+from traceback import print_exc
 from typing import Union
 
 
@@ -14,26 +14,26 @@ class HandleError(commands.Cog):
     @commands.Cog.listener('on_user_command_error')
     @commands.Cog.listener('on_message_command_error')
     @commands.Cog.listener('on_slash_command_error')
-    async def on_interaction_command_error(self, inter: disnake.AppCmdInter, error: Exception):
+    async def on_interaction_command_error(self, inter: AppCmdInter, error: Exception):
 
         await self.hander_error_cmd(ctx=inter, error=error)
     
-    async def hander_error_cmd(self, ctx: disnake.ApplicationCommandInteraction, error: Exception):        
+    async def hander_error_cmd(self, ctx: ApplicationCommandInteraction, error: Exception):
         
         if isinstance(error, ClientException):
             return
         
         error_msg = parse_error(ctx, error)
         
-        if isinstance(error, disnake.NotFound) and str(error).endswith("Unknown Interaction"):
+        if isinstance(error, NotFound) and str(error).endswith("Unknown Interaction"):
             return
         
         kwargs = {"text": ""}
-        color = disnake.Color.red()
+        color = Color.red()
 
         if not error_msg:
 
-            kwargs["embeds"] = disnake.Embed(
+            kwargs["embeds"] = Embed(
                 color=color,
                 title = "Đã có một sự cố xảy ra, nhưng đó không phải lỗi của bạn:",
                 description=f"```py\n{repr(error)[:2030].replace(self.bot.http.token, 'mytoken')}```"
@@ -42,12 +42,10 @@ class HandleError(commands.Cog):
 
             kwargs["embeds"] = []
 
-
-
             for p in paginator(error_msg):
-                kwargs["embeds"].append(disnake.Embed(color=color, description=p))
+                kwargs["embeds"].append(Embed(color=color, description=p))
 
-        kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
+        kwargs["flags"] = MessageFlags(suppress_notifications=True)
 
         try:
             await send_message(ctx, **kwargs)
@@ -55,15 +53,15 @@ class HandleError(commands.Cog):
         except ValueError:
             error_msg = parse_error(ctx, error)
         
-            if isinstance(error, disnake.NotFound) and str(error).endswith("Unknown Interaction"):
+            if isinstance(error, NotFound) and str(error).endswith("Unknown Interaction"):
                 return
             
             kwargs = {"text": ""}
-            color = disnake.Color.red()
+            color = Color.red()
 
             if not error_msg:
 
-                kwargs["embed"] = disnake.Embed(
+                kwargs["embed"] = Embed(
                     color=color,
                     title = "Đã có một sự cố xảy ra, nhưng đó không phải lỗi của bạn:",
                     description=f"```py\n{repr(error)[:2030].replace(self.bot.http.token, 'mytoken')}```"
@@ -73,17 +71,17 @@ class HandleError(commands.Cog):
                 kwargs["embed"] = []
 
                 for p in paginator(error_msg):
-                    kwargs["embed"].append(disnake.Embed(color=color, description=p))
+                    kwargs["embed"].append(Embed(color=color, description=p))
 
-            kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
+            kwargs["flags"] = MessageFlags(suppress_notifications=True)
                     
             await send_message(ctx, **kwargs)
         except:
             print(("-"*50) + f"\n{error_msg}\n" + ("-"*50))
-            traceback.print_exc()
+            print_exc()
         
     @commands.Cog.listener("on_command_error")
-    async def prefix_command_handle(self, ctx: Union[disnake.AppCommandInter, commands.Context], error: Exception):
+    async def prefix_command_handle(self, ctx: Union[AppCommandInter, commands.Context], error: Exception):
         
         if isinstance(error, commands.CommandNotFound):
             return
@@ -105,8 +103,8 @@ class HandleError(commands.Cog):
         if not error_msg:
 
             if ctx.channel.permissions_for(ctx.guild.me).embed_links:
-                kwargs["embed"] = disnake.Embed(
-                    color=disnake.Colour.red(),
+                kwargs["embed"] = Embed(
+                    color=Colour.red(),
                     title="Đã có một sự cố đã xảy ra:",
                     description=f"```py\n{repr(error)[:2030].replace(self.bot.http.token, 'mytoken')}```"
                 ).set_thumbnail(url="https://cdn.discordapp.com/attachments/1172052818501308427/1176426375704498257/1049220311318540338.png?ex=656ed370&is=655c5e70&hm=11d80b14a3ca28d04f7ac48d3a39b0c6d5947d20c9ae78cee9a4e511ce65f301&")
@@ -118,7 +116,7 @@ class HandleError(commands.Cog):
         else:
 
             if ctx.channel.permissions_for(ctx.guild.me).embed_links:
-                kwargs["embed"] = disnake.Embed(color=disnake.Colour.red(), description=error_msg)
+                kwargs["embed"] = Embed(color=Colour.red(), description=error_msg)
             else:
                 kwargs["content"] += f"\n{error_msg}"
 
@@ -145,7 +143,7 @@ class HandleError(commands.Cog):
             except:
                 func = ctx.send
 
-        kwargs["flags"] = disnake.MessageFlags(suppress_notifications=True)
+        kwargs["flags"] = MessageFlags(suppress_notifications=True)
 
         await func(**kwargs)
         

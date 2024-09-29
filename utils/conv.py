@@ -1,8 +1,8 @@
-import datetime
+from datetime import timedelta
 from typing import Union
 from re import compile
 YOUTUBE_VIDEO_REG = compile(r"(https?://)?(www\.)?youtube\.(com|nl)/watch\?v=([-\w]+)")
-URLREGEX = compile(r'^https?:\/\/[^\s/$.?#].[^\s]*$')
+URLREGEX = compile(r'^https?://[^\s/$.?#].\S*$')
 
 replaces = [
     ('&quot;', '"'),
@@ -87,7 +87,7 @@ def string_to_seconds(time):
         for n, t in enumerate(times):
             time_dict[time_names[n]] = int(t)
 
-        return datetime.timedelta(**time_dict).total_seconds()
+        return timedelta(**time_dict).total_seconds()
 
     except:
         return

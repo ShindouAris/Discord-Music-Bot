@@ -3,7 +3,7 @@
 # Chỉ cần import vào thôi, code nó tự chạy <(")
 #########################################################
 
-import logging
+from logging import Filter, StreamHandler, INFO, ERROR, Formatter, WARNING, basicConfig, FileHandler
 from os import makedirs
 from sys import stdout, stderr
 
@@ -19,7 +19,7 @@ except FileNotFoundError:
 # Setup logging
 init(autoreset=True)
 
-class SpectificLevelFilter(logging.Filter):
+class SpectificLevelFilter(Filter):
     ## Logging filter that allow only the spectified level to be processed
     def __init__(self, level: int):
         super().__init__()
@@ -36,28 +36,28 @@ ERROR_FORMAT = f"{Style.DIM}[%(asctime)s]{Style.RESET_ALL} [%(name)s:%(lineno)d]
 DATEFMT="%d-%m-%Y %H:%M:%S"
 
 ## Create handlers
-infoHandler = logging.StreamHandler(stream=stdout)
-infoHandler.setLevel(logging.INFO)
-infoHandler.addFilter(SpectificLevelFilter(logging.INFO))
-infoHandler.setFormatter(logging.Formatter(INFO_FORMAT, datefmt=DATEFMT))
+infoHandler = StreamHandler(stream=stdout)
+infoHandler.setLevel(INFO)
+infoHandler.addFilter(SpectificLevelFilter(INFO))
+infoHandler.setFormatter(Formatter(INFO_FORMAT, datefmt=DATEFMT))
 
-warningHandler = logging.StreamHandler(stream=stdout)
-warningHandler.setLevel(logging.WARNING)
-warningHandler.addFilter(SpectificLevelFilter(logging.WARNING))
-warningHandler.setFormatter(logging.Formatter(WARNING_FORMAT, datefmt=DATEFMT))
+warningHandler = StreamHandler(stream=stdout)
+warningHandler.setLevel(WARNING)
+warningHandler.addFilter(SpectificLevelFilter(WARNING))
+warningHandler.setFormatter(Formatter(WARNING_FORMAT, datefmt=DATEFMT))
 
-errorHandler = logging.StreamHandler(stream=stderr)
-errorHandler.setLevel(logging.ERROR)
-errorHandler.addFilter(SpectificLevelFilter(logging.ERROR))
-errorHandler.setFormatter(logging.Formatter(ERROR_FORMAT, datefmt=DATEFMT))
+errorHandler = StreamHandler(stream=stderr)
+errorHandler.setLevel(ERROR)
+errorHandler.addFilter(SpectificLevelFilter(ERROR))
+errorHandler.setFormatter(Formatter(ERROR_FORMAT, datefmt=DATEFMT))
 
-fileHandler = logging.FileHandler(".logs/bot.log", mode="a", encoding="utf-8")
-fileHandler.setLevel(logging.INFO)
-fileHandler.setFormatter(logging.Formatter("%(asctime)s %(name)s:%(lineno)d [%(levelname)s] - %(message)s", datefmt=DATEFMT))
+fileHandler = FileHandler(".logs/bot.log", mode="a", encoding="utf-8")
+fileHandler.setLevel(INFO)
+fileHandler.setFormatter(Formatter("%(asctime)s %(name)s:%(lineno)d [%(levelname)s] - %(message)s", datefmt=DATEFMT))
 
 ## Configure
-logging.basicConfig(
-    level=logging.INFO,
+basicConfig(
+    level=INFO,
     handlers=[infoHandler, warningHandler, errorHandler, fileHandler]
 )
 
