@@ -5,7 +5,8 @@ from datetime import timedelta, datetime
 
 from disnake.ext import commands
 from utils.ClientUser import ClientUser
-from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState, MessageInteraction
+from disnake import Embed, ApplicationCommandInteraction, Option, MessageFlags, SelectOption, utils, \
+    OptionType, OptionChoice, InteractionNotEditable, AppCmdInter, Interaction, Member, VoiceState, MessageInteraction, Forbidden
 from mafic import Track, Playlist, TrackEndEvent, EndReason, Timescale, Filter, SearchType, TrackExceptionEvent, \
     TrackStuckEvent
 from musicCore.player import MusicPlayer, LOADFAILED, QueueInterface, VolumeInteraction, SelectInteraction, STATE
@@ -166,7 +167,10 @@ class Music(commands.Cog):
             await inter.send(embed=embed, flags=MessageFlags(suppress_notifications=True), delete_after=15)
             if match(URLREGEX, search):
                 await asyncio.sleep(1)
-                await inter.message.edit(suppress_embeds=True, allowed_mentions=False)
+                try:
+                    await inter.message.edit(suppress_embeds=True, allowed_mentions=False)
+                except Forbidden:
+                    pass
 
         if embed == LOADFAILED:
             return await player.stopPlayer()
