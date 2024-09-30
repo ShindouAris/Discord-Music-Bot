@@ -180,7 +180,7 @@ class MusicPlayer(Player[ClientUser]):
         await self.play(track, replace=True)
         await self.controller()
 
-    async def controller(self):
+    async def controller(self, force_resync: bool = False):
         async with self.locker:
             replace = True
             if self.player_controller is None:
@@ -194,6 +194,11 @@ class MusicPlayer(Player[ClientUser]):
             try:
                 if replace:
                     self.player_controller = await self.player_controller.edit(**render_player(self))
+                elif force_resync:
+                    if self.player_controller is not None:
+                        await self.player_controller.delete()
+                    if self.NotiChannel is not None:
+                        self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self))
                 else:
                     if self.player_controller is not None:
                         await self.player_controller.delete()
