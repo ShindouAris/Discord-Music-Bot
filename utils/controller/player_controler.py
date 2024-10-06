@@ -53,7 +53,7 @@ def render_player(player):
     # Will break if changed
     view = View(timeout=None)
     view.add_item(Button(style=ButtonStyle.success if not player.paused else ButtonStyle.red, emoji="⏯️", custom_id="player_controller_pause_resume_btn"))
-    view.add_item(Button(style=ButtonStyle.success, emoji="⏮️", disabled=True if player.queue.previous().__len__ == 0 else False, custom_id="player_controller_prev_track_btn"))
+    view.add_item(Button(style=ButtonStyle.success, emoji="⏮️", disabled=True if player.queue.played.__len__ == 0 else False, custom_id="player_controller_prev_track_btn"))
     view.add_item(Button(style=ButtonStyle.red, emoji="⏹️", custom_id="player_controller_stop_btn"))
     view.add_item(Button(style=ButtonStyle.success, emoji="⏭️", disabled=True if player.queue.next_track.__len__ == 0 else False, custom_id="player_controller_next_track_btn"))
 
