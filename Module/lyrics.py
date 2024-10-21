@@ -31,7 +31,7 @@ class Lyrics(commands.Cog):
         else:
             embed.description = "```Không có```"
         if lyrics is not None and lyrics["source"]:
-            embed.set_footer(text=f"Source: {lyrics['source']}")
+            embed.set_footer(text=f"{lyrics['source']}")
 
         embed.set_thumbnail(player.current.artwork_url)
 
