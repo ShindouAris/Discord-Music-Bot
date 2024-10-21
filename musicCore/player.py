@@ -3,12 +3,13 @@ from __future__ import annotations
 from asyncio import Lock, sleep
 from traceback import print_exc
 
-from mafic.errors import TrackLoadException
+from aiohttp import ClientSession
+from mafic.errors import TrackLoadException, HTTPUnauthorized, HTTPException, HTTPNotFound, HTTPBadRequest
 from mafic import Track, Player, PlayerNotConnected
 from disnake.abc import Connectable
 from utils.ClientUser import ClientUser
 from collections import deque
-from typing import Optional
+from typing import Optional, Any
 from disnake import Message, MessageInteraction, ui, SelectOption, ButtonStyle, Embed, MessageFlags, utils, TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable
 from utils.conv import time_format, trim_text, LoopMODE
 from logging import getLogger
@@ -114,6 +115,47 @@ class MusicPlayer(Player[ClientUser]):
     @property
     def player_endpoint(self) -> str | None:
         return self._server_state["endpoint"]
+
+    @property
+    def node_session_id(self) -> str | None:
+        return self.node._session_id # noqa
+
+    @property
+    def rest_uri(self):
+        return self.node._rest_uri # noqa
+
+    @property
+    def node_password(self):
+        return self.node._Node__password # noqa
+
+    async def request(self,
+                      method: str,
+                      path: str) -> Any:
+        uri  = self.rest_uri / path
+        async with ClientSession() as session:
+            resp = await session.request(method, uri, headers={"Authorization": self.node_password}) # noqa
+            match resp.status:
+                case 200:
+                    return await resp.json()
+                case 204:
+                    return None
+                case 400:
+                    raise HTTPBadRequest(await resp.text())
+                case 401:
+                    raise HTTPUnauthorized(await resp.text())
+                case 404:
+                    raise HTTPNotFound(await resp.text())
+                case _:
+                    raise HTTPException(resp.status, message=await resp.text())
+
+    async def get_lyric(self, guildID) -> Any | None:
+        try:
+            req = await self.request("GET", f"sessions/{self.node_session_id}/players/{guildID}/lyrics")
+            if req is not None:
+                return req
+            return None
+        except HTTPNotFound or HTTPUnauthorized or HTTPBadRequest or HTTPException:
+            return None
 
     async def pause_player(self) -> None:
         await self.pause(pause=not self.paused)
