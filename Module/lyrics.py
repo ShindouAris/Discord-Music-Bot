@@ -25,13 +25,16 @@ class Lyrics(commands.Cog):
         lyrics = await player.get_lyric(inter.guild.id)
 
         embed = Embed()
-        embed.title = f"Lời bài hát cho kết quả tìm kiếm: {player.current.title}"
+        embed.title = f"Lời bài hát cho: {player.current.title}"
+        embed.url = player.current.uri
         if lyrics is not None:
             embed.description = lyrics["text"]
+            embed.colour = 0x07c1f0
         else:
-            embed.description = "```Không có```"
+            embed.description = "```Không có hoặc nguồn phát nhạc không hỗ trợ```"
+            embed.colour = 0xf01707
         if lyrics is not None and lyrics["source"]:
-            embed.set_footer(text=f"{lyrics['source']}")
+            embed.set_footer(text=f"Nguồn: {lyrics['source'][8:]}")
 
         embed.set_thumbnail(player.current.artwork_url)
 
