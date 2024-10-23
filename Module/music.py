@@ -116,10 +116,10 @@ class Music(commands.Cog):
                         embed.set_author(name=result.tracks[0].source.capitalize(), icon_url=music_source_image(result.tracks[0].source.lower()))
                         embed.description = f"``{thumbnail_track.source.capitalize()} | {result.tracks.__len__()} bài hát | {time_format(total_time)}``"
                         embed.set_thumbnail(result.tracks[0].artwork_url)
-                        # try:
-                        #     await inter.edit_original_response(embed=embed, delete_after=5,view=None, flags=MessageFlags(suppress_notifications=True))
-                        # except AttributeError:
-                        #     await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
+                        try:
+                            await inter.edit_original_response(embed=embed, delete_after=5,view=None, flags=MessageFlags(suppress_notifications=True))
+                        except AttributeError:
+                            await msg.edit(embed=embed, delete_after=5, view=None, flags=MessageFlags(suppress_notifications=True))
                     else:
                         track: Track = result.tracks[0]
                         player.queue.add_next_track(track)
@@ -616,6 +616,8 @@ class Music(commands.Cog):
     async def nightcore(self, inter:  ApplicationCommandInteraction):
         await inter.response.defer()
         player: MusicPlayer = inter.author.guild.voice_client
+        if not player:
+            return await inter.edit_original_response("Không có trình phát được khởi tạo trên máy chủ")
         player.nightCore = not player.nightCore
 
         if player.nightCore:
@@ -627,7 +629,7 @@ class Music(commands.Cog):
             await player.add_filter(nightCore_filter_timeScale, label="nightcore")
             txt = "bật"
 
-        await inter.edit_original_response(embed= Embed(description=f"Đã {txt} tính năng nightcore\n -# Tính năng này để tăng âm sắc và tốc độ cho bài hát"),
+        await inter.edit_original_response(embed= Embed(description=f"### Đã {txt} tính năng nightcore"),
                                            flags=MessageFlags(suppress_notifications=True))
 
     @commands.Cog.listener("on_track_end")
