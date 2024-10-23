@@ -254,7 +254,7 @@ class MusicPlayer(Player[ClientUser]):
     async def update_controller(self):
         while True:
             await sleep(20)
-            await self.controller()
+            await self.controller(force_resync=True)
             
     async def get_auto_tracks(self):
         try:
