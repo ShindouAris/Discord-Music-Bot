@@ -9,8 +9,11 @@ class Owner(Cog):
     @is_owner()
     @command(name="reload", description="Tải lại các module")
     async def _reload_module(self, ctx: ApplicationCommandInteraction):
-        self.bot.load_modules()
-        await ctx.send("Reload OK")
+        load = self.bot.load_modules()
+        if not load:
+            await ctx.send("Reload OK")
+        else:
+            await ctx.send("Reload Failed")
 
 
     @is_owner()

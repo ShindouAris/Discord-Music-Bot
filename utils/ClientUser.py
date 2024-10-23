@@ -84,6 +84,7 @@ class ClientUser(AutoShardedBot):
 
 
     async def on_node_ready(self, node: Node):
+        self.logger.info(f"Máy chủ {node.label} (v{node.version}) đã sẵn sàng")
         with open("lavalink_session_key.ini", "w") as session_key_value:
             session_key_value.write(node.session_id)
             self.available_nodes.append(node)
@@ -108,6 +109,7 @@ class ClientUser(AutoShardedBot):
     def load_modules(self):
 
         modules_dir = "Module"
+        error = False
 
         for item in walk(modules_dir):
             files = filter(lambda f: f.endswith('.py'), item[-1])
@@ -123,10 +125,14 @@ class ClientUser(AutoShardedBot):
                         logger.info(f'Module {file} Đã tải lên thành công')
                     except Exception as e:
                         logger.error(f"Đã có lỗi xảy ra với Module {file}: Lỗi: {repr(e)}")
+                        error = True
                     continue
                 except Exception as e:
                     logger.error(f"Đã có lỗi xảy ra với Module {file}: Lỗi: {repr(e)}")
+                    error = True
                     continue
+
+        return error
 
 def load():
     logger.info("Booting Client....")
