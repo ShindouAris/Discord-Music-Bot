@@ -3,10 +3,15 @@ from disnake.ui import View, Button
 from utils.conv import trim_text, music_source_image, time_format
 from datetime import timedelta
 from utils.conv import LoopMODE
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from musicCore import MusicPlayer
 
 # This file is editable
 
-def render_player(player):
+def render_player(self):
+    player: MusicPlayer = self
     embed = Embed()
     embed.set_author(name="Đang phát" if not player.paused else "Tạm dừng", icon_url=music_source_image(player.current.source.lower()))
     embed.title = f"`{trim_text(player.current.title, 24)}`"
