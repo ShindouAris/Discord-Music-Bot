@@ -101,7 +101,7 @@ class MusicPlayer(Player[ClientUser]):
         self.player_channel = channel
         self.NotiChannel: Optional[MessageableChannel] = None
         self.message: Optional[Message] = None
-        self.nightCore = False
+        self.nightCore = STATE.OFF
         self.keep_connection = STATE.OFF
         self.is_autoplay_mode = False
         self.player_controller: Optional[Message] = None
@@ -247,7 +247,7 @@ class MusicPlayer(Player[ClientUser]):
                     if self.NotiChannel is not None:    
                         self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self))
             except Exception as e:
-                logger.error(e)
+                logger.error(f"Tải trình điều khuyển thất bại: {e}")
                 self.player_controller = None
                 self.NotiChannel = None
     

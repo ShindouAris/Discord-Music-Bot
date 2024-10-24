@@ -618,16 +618,19 @@ class Music(commands.Cog):
         player: MusicPlayer = inter.author.guild.voice_client
         if not player:
             return await inter.edit_original_response("Không có trình phát được khởi tạo trên máy chủ")
-        player.nightCore = not player.nightCore
-
-        if player.nightCore:
-            await player.remove_filter(label="nightcore")
-            txt = "tắt"
-        else:
-            nightCore_EQ_timeScale = Timescale(speed=1.1, pitch=1.2)
-            nightCore_filter_timeScale = Filter(timescale=nightCore_EQ_timeScale)
-            await player.add_filter(nightCore_filter_timeScale, label="nightcore")
-            txt = "bật"
+        match player.nightCore:
+            case STATE.ON:
+                player.nightCore = STATE.OFF
+                await player.remove_filter(label="nightcore")
+                txt = "tắt"
+            case STATE.OFF:
+                player.nightCore = STATE.ON
+                nightCore_EQ_timeScale = Timescale(speed=1.1, pitch=1.2)
+                nightCore_filter_timeScale = Filter(timescale=nightCore_EQ_timeScale)
+                await player.add_filter(nightCore_filter_timeScale, label="nightcore")
+                txt = "bật"
+            case _:
+                txt = "tắt"
 
         await inter.edit_original_response(embed= Embed(description=f"### Đã {txt} tính năng nightcore"),
                                            flags=MessageFlags(suppress_notifications=True))
@@ -640,7 +643,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener("on_track_exception")
     async def handling_track_exception(self, event: TrackExceptionEvent[MusicPlayer]):
-        self.bot.logger.error(f"Xảy ra sự cố khi cố gắng phát bài hát: {event.track.uri} tại GUILDID {event.player.guild.id}, {event.exception['message']}")
+        self.bot.logger.error(f"Xảy ra sự cố khi cố gắng phát bài hát: {event.track.uri} tại GUILDID {event.player.guild.id}: Lỗi: {event.exception['message']}")
         await event.player.NotiChannel.send(embed=Embed(description = f"Đã có lỗi xảy ra khi tải bài hát `{event.track.uri}`\n ```java\n{event.exception['cause']}\n```"), flags=MessageFlags(suppress_notifications=True), delete_after=10)
         if self.bot.available_nodes.__len__() == 0:
             return await event.player.stopPlayer()

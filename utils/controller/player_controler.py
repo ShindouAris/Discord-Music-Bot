@@ -27,8 +27,11 @@ def render_player(player):
     else:
         txt += f"> 📡 • Độ trễ đến máy chủ discord `{trim_text(endpoint, 20)}`: N/A\n"
 
-    if player.nightCore:
-        txt += f"> 🇳 • Đang bật nightcore \n"
+    match player.nightCore:
+        case 0:
+            ...
+        case 1:
+            txt += f"> 🇳 • Đang bật nightcore \n"
 
 
     if player.queue.next_track:
