@@ -41,9 +41,9 @@ class Queue:
     def __init__(self):
         self.is_playing: Optional[Track] = None
         self.next_track: deque = deque()
-        self.played: deque = deque(maxlen=30)
+        self.played: deque = deque(maxlen=45)
         self.loop = LoopMODE.OFF
-        self.autoplay: deque = deque(maxlen=70)
+        self.autoplay: deque = deque(maxlen=25)
         self.keep_connect = STATE.OFF
 
     def get_next_track(self):
