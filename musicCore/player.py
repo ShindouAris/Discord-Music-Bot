@@ -66,6 +66,7 @@ class Queue:
 
         if self.next_track.__len__() != 0:
             self.is_playing = self.next_track.popleft()
+            return self.is_playing
 
         if self.next_track.__len__() == 0 and self.autoplay.__len__() != 0:
             self.is_playing = self.autoplay.popleft()
@@ -248,8 +249,8 @@ class MusicPlayer(Player[ClientUser]):
                         self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self))
             except Exception as e:
                 logger.error(f"Tải trình điều khuyển thất bại: {e}")
-                self.player_controller = None
-                self.NotiChannel = None
+                # self.player_controller = None
+                # self.NotiChannel = None
     
     async def update_controller(self):
         while True:
