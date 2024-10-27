@@ -1,3 +1,4 @@
+import os
 from logging import getLogger
 
 import aiosqlite
@@ -64,6 +65,10 @@ class Local_Database:
         self.cached_databases: Optional[Cached_Databases] = None
 
     async def initialze(self):
+        path = 'databases/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+
         self.cached_databases = Cached_Databases(self)
 
     async def build_table(self):
