@@ -1,9 +1,10 @@
 from disnake import VoiceChannel, AppCmdInter, ForumChannel, InteractionTimedOut, Thread, ApplicationCommandInteraction, MessageInteraction, Interaction, StageChannel, MessageFlags
 from disnake.ext.commands import Context, NotOwner, CheckFailure, MissingPermissions, CommandError, BotMissingPermissions, CommandOnCooldown, Paginator, NoPrivateMessage
 from typing import Union
-from utils.conv import perms_translations, time_format
+from utils.conv import time_format
 from disnake.utils import escape_mentions
 from typing import Optional
+from utils.language.preload import language as language_manager
 
 
 class ClientException(CheckFailure):
@@ -26,6 +27,24 @@ class DiffVoice(CheckFailure):
 class NoPlayer(CheckFailure):
     ...
 
+class YoutubeSourceDisabled(CheckFailure):
+    ...
+
+class NoLavalinkServerAvailable(CheckFailure):
+    ...
+
+class LoadFailed(CheckFailure):
+    ...
+
+class InvaidINLiveStream(CheckFailure):
+    ...
+
+class NotSeakable(CheckFailure):
+    ...
+
+class Invaid_SeekValue(CheckFailure):
+    ...
+
 class GenericError(CheckFailure):
 
     def __init__(self, text: str, *, self_delete: int = None, delete_original: Optional[int] = None, components: list = None):
@@ -37,41 +56,62 @@ class GenericError(CheckFailure):
 
 def parse_error(
         ctx: Union[ApplicationCommandInteraction, Context, MessageInteraction],
-        error: Exception
+        error: Exception,
+        language: str = "vi",
 ):
     error_txt = ""
         
     if isinstance(error, NotOwner):
-            error_txt = "**Chỉ nhà phát triển của tôi mới có thể sử dụng lệnh này**"
+        error_txt = language_manager.get(language, 'error',"not_owner_error")
 
     if isinstance(error, BotMissingPermissions):
-            error_txt = "Tôi không có các quyền sau để thực thi lệnh này: ```\n{}```" \
-                .format(", ".join(perms_translations.get(perm, perm) for perm in error.missing_permissions))
+        error_txt = language_manager.get(language, 'error','bot_missing_permissions_error') \
+            .format(permissions=", ".join(language_manager.get(language, 'perm',perm) for perm in error.missing_permissions))
 
     if isinstance(error, MissingPermissions):
-            error_txt = "Bạn không có các quyền sau để thực hiện lệnh này: ```\n{}```" \
-                .format(", ".join(perms_translations.get(perm, perm) for perm in error.missing_permissions))
+        error_txt = language_manager.get(language, 'error','missing_permissions_error') \
+            .format(permissions=", ".join(language_manager.get(language, 'perm',perm) for perm in error.missing_permissions))
                 
     if isinstance(error, NoPrivateMessage):
-            error_txt = "Lệnh này không thể chạy trên tin nhắn riêng tư."
+        error_txt = language_manager.get(language, 'error','no_private_message_error')
 
     if isinstance(error, DiffVoice):
-        error_txt = "**Bạn phải ở trên kênh thoại hiện tại của tôi để sử dụng lệnh này.**"
+        error_txt = language_manager.get(language, 'error', 'diff_voice')
 
     if isinstance(error, MissingVoicePermissions):
-        error_txt = f"**Tôi không được phép kết nối/nói chuyện với kênh:** {error.voice_channel.mention}"
+        error_txt = language_manager.get(language, 'error', 'no_connect_perm') \
+                    .format(channel=error.voice_channel.mention)
 
     if isinstance(error, NoVoice):
-        error_txt = "**Bạn phải tham gia một kênh thoại để sử dụng lệnh này.**"
+        error_txt = language_manager.get(language, 'error', 'no_voice')
 
     if isinstance(error, NoPlayer):
-        error_txt = "**Không có trình phát nào được khởi tạo trên máy chủ này**"
-        
+        error_txt = language_manager.get(language, 'error', 'no_player')
+
+    if isinstance(error, YoutubeSourceDisabled):
+        error_txt = language_manager.get(language, 'error', 'youtube_source_disabled')
+
+    if isinstance(error, NoLavalinkServerAvailable):
+        error_txt = language_manager.get(language, 'error', 'no_lavalink')
+
+    if isinstance(error, LoadFailed):
+        error_txt = language_manager.get(language, 'error', 'load_failed')
+
+    if isinstance(error, InvaidINLiveStream):
+        error_txt = language_manager.get(language, 'error', 'invalid_in_livestream')
+
+    if isinstance(error, NotSeakable):
+        error_txt = language_manager.get(language, 'error', 'not_seakable')
+
+    if isinstance(error, Invaid_SeekValue):
+        error_txt = language_manager.get(language, 'error', 'invalid_seek_value')
+
     if isinstance(error, CommandOnCooldown):
-            remaing = int(error.retry_after)
-            if remaing < 1:
-                remaing = 1
-            error_txt = "**Bạn phải đợi {} mới có thể sử dụng lệnh này.**".format(time_format(int(remaing) * 1000, use_names=True))
+        remaing = int(error.retry_after)
+        if remaing < 1:
+            remaing = 1
+        error_txt = language_manager.get(language, "error",'command_on_cooldown_error') \
+            .format(time = time_format(int(remaing) * 1000, use_names=True, language=language))
             
     if isinstance(error, GenericError):
         error_txt = error.text

@@ -1,0 +1,6 @@
+{
+  "searching": "### 🔍 Đang tìm lời bài hát...",
+  "title_txt": "Lời bài hát cho: {song_name}",
+  "source": "Nguồn {source}",
+  "no_source_or_music_server_notsupport": "```Không có hoặc nguồn phát nhạc không hỗ trợ```"
+}

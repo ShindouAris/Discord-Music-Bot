@@ -15,15 +15,15 @@ class HandleError(commands.Cog):
     @commands.Cog.listener('on_message_command_error')
     @commands.Cog.listener('on_slash_command_error')
     async def on_interaction_command_error(self, inter: AppCmdInter, error: Exception):
-
-        await self.hander_error_cmd(ctx=inter, error=error)
+        lang = await self.bot.database.cached_databases.get_language(inter.guild.id)
+        await self.hander_error_cmd(ctx=inter, error=error, language=lang)
     
-    async def hander_error_cmd(self, ctx: ApplicationCommandInteraction, error: Exception):
+    async def hander_error_cmd(self, ctx: ApplicationCommandInteraction, error: Exception, language: str = 'vi'):
         
         if isinstance(error, ClientException):
             return
         
-        error_msg = parse_error(ctx, error)
+        error_msg = parse_error(ctx, error, language)
         
         if isinstance(error, NotFound) and str(error).endswith("Unknown Interaction"):
             return
@@ -33,7 +33,7 @@ class HandleError(commands.Cog):
 
         if not error_msg:
 
-            kwargs["embeds"] = Embed(
+            kwargs["embeds"] = Embed( # noqa
                 color=color,
                 title = "Đã có một sự cố xảy ra, nhưng đó không phải lỗi của bạn:",
                 description=f"```py\n{repr(error)[:2030].replace(self.bot.http.token, 'mytoken')}```"
@@ -51,7 +51,7 @@ class HandleError(commands.Cog):
             await send_message(ctx, **kwargs)
             
         except ValueError:
-            error_msg = parse_error(ctx, error)
+            error_msg = parse_error(ctx, error, language)
         
             if isinstance(error, NotFound) and str(error).endswith("Unknown Interaction"):
                 return
@@ -61,7 +61,7 @@ class HandleError(commands.Cog):
 
             if not error_msg:
 
-                kwargs["embed"] = Embed(
+                kwargs["embed"] = Embed( # noqa
                     color=color,
                     title = "Đã có một sự cố xảy ra, nhưng đó không phải lỗi của bạn:",
                     description=f"```py\n{repr(error)[:2030].replace(self.bot.http.token, 'mytoken')}```"
@@ -97,7 +97,9 @@ class HandleError(commands.Cog):
                 await self.on_legacy_command_error(ctx, e)
             return
 
-        error_msg = parse_error(ctx, error)
+        lang = self.bot.database.cached_databases.get_language(ctx.guild.id)
+
+        error_msg = parse_error(ctx, error, lang)
         kwargs = {"content": ""}
        
         if not error_msg:

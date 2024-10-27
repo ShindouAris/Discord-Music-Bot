@@ -1,0 +1,20 @@
+{
+    "not_owner_error": "**Only my developer can use this command**",
+    "selection_timeout_error": "There was an issue with my database",
+    "bot_missing_permissions_error": "I lack the following permissions to execute this command: ```{permissions}```",
+    "missing_permissions_error": "You lack the following permissions to execute this command: ```{permissions}```",
+    "no_private_message_error": "This command cannot be run in private messages.",
+    "command_on_cooldown_error": "**You must wait {time} more before using this command again.**",
+    "error_title": "**An issue has occurred:**",
+    "nsfw_required": "Cannot execute this command; the channel must be age-restricted",
+    "diff_voice": "You must be in my voice channel to execute this command",
+    "no_player": "No player has been initialized on this server",
+    "no_voice": "You must join a voice channel to use this command.",
+    "no_connect_perm": "I am not allowed to connect/speak in the channel: {channel}",
+    "youtube_source_disabled": "YouTube links are currently disabled...",
+    "no_lavalink": "No available music server",
+    "load_failed": "❌ An error occurred while searching for the requested song",
+    "invalid_in_livestream": "You cannot do this during a livestream",
+    "not_seakable": "This song cannot be skipped",
+    "invalid_seek_value": "**Invalid value! Use seconds (1 or 2 digits) or in the format (minutes):(seconds)**"
+}

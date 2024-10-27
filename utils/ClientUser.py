@@ -10,7 +10,12 @@ from dotenv import load_dotenv
 from logging import getLogger
 from gc import collect
 from mafic import NodePool, Node
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional, TYPE_CHECKING
+from utils.language.preload import language
+from utils.database.database import Local_Database
+
+if TYPE_CHECKING:
+    from utils.language.language import LocalizationManager
 
 class Config(TypedDict):
     host: str
@@ -44,6 +49,7 @@ load_dotenv()
 
 logger = getLogger(__name__)
 
+
 class ClientUser(AutoShardedBot):
     
     def __init__(self, *args, intents, command_sync_flag, command_prefix: str, **kwargs) -> None:
@@ -59,6 +65,8 @@ class ClientUser(AutoShardedBot):
         self.unavailable_nodes: list = []
         self.status = Status.idle
         self.game = Activity(name=environ.get("PRESENCE"), type=ActivityType.listening)
+        self.language: Optional[LocalizationManager] = language
+        self.database = Local_Database()
 
     async def loadNode(self):
             try:
@@ -82,7 +90,6 @@ class ClientUser(AutoShardedBot):
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
                         self.unavailable_nodes.append(node)
 
-
     async def on_node_ready(self, node: Node):
         self.logger.info(f"Máy chủ {node.label} (v{node.version}) đã sẵn sàng")
         with open("lavalink_session_key.ini", "w") as session_key_value:
@@ -97,10 +104,10 @@ class ClientUser(AutoShardedBot):
             self.logger.warning("Đã hết máy chủ âm nhạc khả dụng, bot có thể sẽ không chạy")
 
     async def on_ready(self):
-
-                await self.change_presence(status=self.status, activity=self.game)
-
-                logger.info(f"BOT {self.user.name} đã sẵn sàng")
+        await self.change_presence(status=self.status, activity=self.game)
+        await self.database.initialze()
+        await self.database.build_table()
+        logger.info(f"BOT {self.user.name} đã sẵn sàng")
 
     def close(self):
         logger.warning("Đã nhận tín hiệu ngắt bot và dọn dẹp môi trường")
@@ -134,16 +141,17 @@ class ClientUser(AutoShardedBot):
 
         return error
 
+
 def load():
     logger.info("Booting Client....")
 
     DISCORD_TOKEN = environ.get("TOKEN")
 
     intents = Intents()
-    intents.message_content = True # Chuyển thành false nếu bot không bật intent số 3 (MESSAGE CONTENT INTENT)
-    intents.messages = True
-    intents.guilds = True
-    intents.voice_states = True
+    intents.message_content = True # Chuyển thành false nếu bot không bật intent số 3 (MESSAGE CONTENT INTENT) # noqa
+    intents.messages = True  # noqa
+    intents.guilds = True  # noqa
+    intents.voice_states = True  # noqa
 
     sync_cfg = True
     command_sync_config = CommandSyncFlags(

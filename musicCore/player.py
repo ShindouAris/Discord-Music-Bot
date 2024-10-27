@@ -19,14 +19,6 @@ from utils.controller.player_controler import render_player
 
 MessageableChannel = Union[TextChannel, Thread, VoiceChannel, StageChannel, PartialMessageable]
 
-LOADFAILED = Embed(
-    title="❌ Đã có lỗi xảy ra khi tìm kiếm bài hát được yêu cầu",
-    color=0xFF0000
-)
-EMPTY_QUEUE = Embed(
-    title="👋 Danh sách chờ đã hết. Bot sẽ rời khỏi kênh của bạn",
-    color=0xFFFFFF
-)
 
 logger = getLogger(__name__)
 
@@ -171,9 +163,11 @@ class MusicPlayer(Player[ClientUser]):
 
     async def playnext(self):
         track = self.queue.process_next()
+        # lang = await self.client.database.cached_databases.get_language(self.guild.id)
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
+                # txt = self.client.language.get(lang, 'music', 'queue_end')
+                await self.sendMessage(embed=Embed(description="txt", color=0xffddff), flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
         self.start_time = datetime.now()
@@ -214,7 +208,9 @@ class MusicPlayer(Player[ClientUser]):
             track = await self.get_auto_tracks()
         if track is None:
             if self.channel is not None:
-                await self.sendMessage(embed=EMPTY_QUEUE, flags=MessageFlags(suppress_notifications=True))
+                # lang = await self.client.database.cached_databases.get_language(self.guild.id)
+                # txt = self.client.language.get(lang, 'music', 'queue_end')
+                await self.sendMessage(embed=Embed(description="txt", color=0xffddff), flags=MessageFlags(suppress_notifications=True))
             await self.stopPlayer()
             return
         if track.stream:
@@ -450,7 +446,7 @@ class QueueInterface(ui.View):
         stop_interaction.callback = self.stop_interaction
         self.add_item(stop_interaction)
 
-        update_q = ui.Button(emoji='🔄', label="Làm mới", style=ButtonStyle.grey)
+        update_q = ui.Button(emoji='🔄', label="Refresh", style=ButtonStyle.grey)
         update_q.callback = self.update_q
         self.add_item(update_q)
 
@@ -463,7 +459,7 @@ class QueueInterface(ui.View):
             return
 
         embed = self.message.embeds[0]
-        embed.set_footer(text="Đã hết thời gian tương tác!")
+        embed.set_footer(text="Timed_out")
 
         for c in self.children:
             c.disabled = True
@@ -471,7 +467,7 @@ class QueueInterface(ui.View):
         await self.message.edit(embed=embed, view=self)
 
     def update_embed(self):
-        self.embed.title = f"**Trang [{self.current + 1} / {self.max_pages + 1}]**"
+        self.embed.title = f"**Page [{self.current + 1} / {self.max_pages + 1}]**"
         self.embed.description = self.pages[self.current]
         self.children[0].options = self.selected[self.current]
 
@@ -537,17 +533,17 @@ class VolumeInteraction(ui.View):
         for l in [5, 20, 40, 60, 80, 100, 120, 150]:
 
             if l > 100:
-                description = "Âm lượng quá 100% có thể nghe rất bất thường."
+                description = "Warning: break"
             else:
                 description = None
             opts.append(SelectOption(label=f"{l}%", value=f"vol_{l}", description=description))
 
-        select = ui.Select(placeholder='Âm lượng:', options=opts)
+        select = ui.Select(placeholder='Volume:', options=opts)
         select.callback = self.callback
         self.add_item(select)
 
     async def callback(self, interaction: MessageInteraction):
-        await interaction.response.edit_message(content=f"Âm lượng đã thay đổi!",embed=None, view=None)
+        await interaction.response.edit_message(content=f"OK!",embed=None, view=None)
         self.volume = int(interaction.data.values[0][4:])
         self.stop()
 

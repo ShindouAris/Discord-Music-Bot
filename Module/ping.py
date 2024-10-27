@@ -15,7 +15,7 @@ class Ping(Cog):
     async def ping(self, ctx):
         embed = Embed(
             title="Pong!",
-            description=f"Độ trễ API: {round(self.bot.latency * 100)}ms",
+            description=f"API Latency: {round(self.bot.latency * 1000)}ms",
             color= Color.green()
         )
         await ctx.send(embed=embed)
@@ -23,7 +23,7 @@ class Ping(Cog):
     about_cd = CooldownMapping.from_cooldown(1, 5, BucketType.member)
         
     @slash_command(
-        description=f"Xem thông tin về tôi.", cooldown=about_cd, dm_permission=False
+        description=f"About Me.", cooldown=about_cd, dm_permission=False
     )
     async def about(
             self,
@@ -32,29 +32,21 @@ class Ping(Cog):
         await inter.response.defer(ephemeral=True)
         python_ram = Process(getpid()).memory_info().rss
 
-        ram_msg = f"> **Sử dụng RAM (Python):** `{naturalsize(python_ram)} \ {naturalsize(virtual_memory()[0])}`\n"
+        ram_msg = f"> **RAM (Python):** `{naturalsize(python_ram)} \ {naturalsize(virtual_memory()[0])}`\n"
         
-        latency = round(self.bot.latency * 100)
-        if latency >= 1000:
-            latency_bot = f"Độ trễ rất cao {latency}"
-        elif latency >= 200:
-            latency_bot = f"Độ trễ cao {latency}"
-        elif latency >= 100:
-            latency_bot = f"Độ trễ trung bình {latency}"
-        else:
-            latency_bot = f"{latency}"
+        latency_bot = round(self.bot.latency * 1000)
             
         embed = Embed(description="", color=0xC03865)
         
-        embed.description += f"### Thông tin của {self.bot.user.name}#{self.bot.user.discriminator}:\n"
+        embed.description += f"### About {self.bot.user.name}#{self.bot.user.discriminator}:\n"
         
-        embed.description += f"> **Phiên bản của Python:** `{python_version()}`\n" \
-                             f"> **Phiên bản của Disnake:** `Pre-release {__version__}`\n" \
-                             f"> **Hệ điều hành đang sử dụng:** `{system()} {release()} {machine()}`\n" \
-                             f"> **Mức sử dụng CPU:** `{cpu_percent()}% \ 100%, ({cpu_count()} Core)`\n" \
-                             f"> **Độ trễ API:** `{latency_bot}ms`\n" \
+        embed.description += f"> **Python:** `{python_version()}`\n" \
+                             f"> **Disnake:** `Pre-release {__version__}`\n" \
+                             f"> **OS:** `{system()} {release()} {machine()}`\n" \
+                             f"> **CPU:** `{cpu_percent()}% \ 100%, ({cpu_count()} Core)`\n" \
+                             f"> **API Latency:** `{latency_bot}ms`\n" \
                              f"{ram_msg}" \
-                             f"> **Lần khởi động lại cuối cùng:** <t:{int(self.bot.uptime.timestamp())}:R>\n" \
+                             f"> **Last restart:** <t:{int(self.bot.uptime.timestamp())}:R>\n" \
                              f"> **ShardID:** {self.bot.shard_id}"
         
         try:

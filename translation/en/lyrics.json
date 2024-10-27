@@ -1,0 +1,6 @@
+{
+  "searching": "### 🔍 Searching for lyrics...",
+  "title_txt": "Lyrics for: {song_name}",
+  "source": "Source {source}",
+  "no_source_or_music_server_notsupport": "```No source or music server does not support```"
+}
