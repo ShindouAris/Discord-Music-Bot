@@ -711,10 +711,10 @@ class Music(commands.Cog):
     async def handling_track_exception(self, event: TrackExceptionEvent[MusicPlayer]):
         lang = await self.bot.database.cached_databases.get_language(event.player.guild.id)
         self.bot.logger.error(
-            f"Xảy ra sự cố khi cố gắng phát bài hát: {event.track.uri} tại GUILDID {event.player.guild.id}: Lỗi: {event.exception['message']}")
+            f"Xảy ra sự cố khi cố gắng phát bài hát: {event.track.uri} tại GUILDID {event.player.guild.id}: Lỗi: {event.exception['cause']}")
         await event.player.NotiChannel.send(embed=Embed(
             description=self.bot.language.get(lang, "music", "track_error").format(track=event.track.uri,
-                                                                                   cause=event.exception['cause'])),
+                                                                                   cause=event.exception['message'])),
                                             flags=MessageFlags(suppress_notifications=True), delete_after=10)
         if self.bot.available_nodes.__len__() == 0:
             return await event.player.stopPlayer()
