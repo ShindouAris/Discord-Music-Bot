@@ -63,7 +63,7 @@ class Cached_Databases:
         count = 0
         for guildID in self.databases:
             if not self.databases[guildID]['synced']:
-                await self.database.set_guild(guildID, None)
+                await self.database.set_guild(guildID, self.databases[guildID]['language'])
                 count += 1
         logger.info(f"Đã đồng bộ {count} guild{'s' if count > 1 else ''} vào cơ sở dữ liệu")
 
