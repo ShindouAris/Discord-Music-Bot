@@ -141,7 +141,7 @@ class MusicPlayer(Player[ClientUser]):
                 case _:
                     raise HTTPException(resp.status, message=await resp.text())
 
-    async def get_lyric(self, guildID) -> Any | None:
+    async def get_lyric(self, guildID) -> dict | None:
         try:
             req = await self.request("GET", f"sessions/{self.node_session_id}/players/{guildID}/lyrics")
             if req is not None:
@@ -163,11 +163,11 @@ class MusicPlayer(Player[ClientUser]):
 
     async def playnext(self):
         track = self.queue.process_next()
-        # lang = await self.client.database.cached_databases.get_language(self.guild.id)
+        lang = await self.client.database.cached_databases.get_language(self.guild.id)
         if track is None:
             if self.channel is not None:
-                # txt = self.client.language.get(lang, 'music', 'queue_end')
-                await self.sendMessage(embed=Embed(description="txt", color=0xffddff), flags=MessageFlags(suppress_notifications=True))
+                txt = self.client.language.get(lang, 'music', 'queue_end')
+                await self.sendMessage(embed=Embed(description=txt, color=0xffddff), flags=MessageFlags(suppress_notifications=True))
                 await self.disconnect(force=True)
                 return
         self.start_time = datetime.now()
@@ -208,9 +208,9 @@ class MusicPlayer(Player[ClientUser]):
             track = await self.get_auto_tracks()
         if track is None:
             if self.channel is not None:
-                # lang = await self.client.database.cached_databases.get_language(self.guild.id)
-                # txt = self.client.language.get(lang, 'music', 'queue_end')
-                await self.sendMessage(embed=Embed(description="txt", color=0xffddff), flags=MessageFlags(suppress_notifications=True))
+                lang = await self.client.database.cached_databases.get_language(self.guild.id)
+                txt = self.client.language.get(lang, 'music', 'queue_end')
+                await self.sendMessage(embed=Embed(description=txt, color=0xffddff), flags=MessageFlags(suppress_notifications=True))
             await self.stopPlayer()
             return
         if track.stream:
