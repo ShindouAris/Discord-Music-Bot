@@ -109,9 +109,10 @@ class ClientUser(AutoShardedBot):
         await self.database.build_table()
         logger.info(f"BOT {self.user.name} đã sẵn sàng")
 
-    def close(self):
+    async def close(self):
         logger.warning("Đã nhận tín hiệu ngắt bot và dọn dẹp môi trường")
-        return super().close()
+        await self.database.cached_databases.close()
+        return await super().close()
 
     def load_modules(self):
 

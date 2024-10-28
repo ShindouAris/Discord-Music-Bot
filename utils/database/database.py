@@ -58,6 +58,15 @@ class Cached_Databases:
         self.databases[guildID]['language'] = language
         self.databases[guildID]['synced'] = False
 
+    async def close(self):
+        logger.info("Đang lưu dữ liệu...")
+        count = 0
+        for guildID in self.databases:
+            if not self.databases[guildID]['synced']:
+                await self.database.set_guild(guildID, None)
+                count += 1
+        logger.info(f"Đã đồng bộ {count} guild{'s' if count > 1 else ''} vào cơ sở dữ liệu")
+
 
 class Local_Database:
     def __init__(self):
