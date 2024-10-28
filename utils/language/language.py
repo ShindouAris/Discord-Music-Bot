@@ -6,15 +6,12 @@ from logging import getLogger
 from utils.database.cache import LRUCache
 
 class LanguageManager(LRUCache):
-    __slots__ = "language_data"
 
     def __init__(self):
         super().__init__(780, -1)
-        self.language_data: dict[str, dict] = {}
 
     def add_language(self, category: str, language_data: dict) -> None:
         """Store language data for each category"""
-        self.language_data[category] = language_data
         self.put(category, language_data)
 
     def get_language_key(self, category: str, key: str) -> str | None:
