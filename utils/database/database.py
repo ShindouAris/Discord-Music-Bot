@@ -61,7 +61,6 @@ class Cached_Databases:
 
 class Local_Database:
     def __init__(self):
-        self.connection = None
         self.cached_databases: Optional[Cached_Databases] = None
 
     def initialze(self):
@@ -113,7 +112,7 @@ class Local_Database:
     async def set_guild(self, guildID: int, language: str = None):
         if not language:
             language = "vi"
-        async with self.connection as cursor:
+        async with aiosqlite.connect("databases/guildData.sqlite") as cursor:
             await cursor.execute("""UPDATE guilds SET language=? WHERE guildID=?""", (language, guildID,))
             await cursor.commit()
             await cursor.close()
