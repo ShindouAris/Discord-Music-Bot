@@ -97,7 +97,7 @@ class HandleError(commands.Cog):
                 await self.on_legacy_command_error(ctx, e)
             return
 
-        lang = self.bot.database.cached_databases.get_language(ctx.guild.id)
+        lang = await self.bot.database.cached_databases.get_language(ctx.guild.id)
 
         error_msg = parse_error(ctx, error, lang)
         kwargs = {"content": ""}
