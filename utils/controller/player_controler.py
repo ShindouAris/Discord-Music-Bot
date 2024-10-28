@@ -10,17 +10,18 @@ if TYPE_CHECKING:
 
 # This file is editable
 
-def render_player(self):
+def render_player(self, language: str = 'vi'):
     player: MusicPlayer = self
     embed = Embed()
-    embed.set_author(name="Đang phát" if not player.paused else "Tạm dừng", icon_url=music_source_image(player.current.source.lower()))
+    embed.set_author(name=player.client.language.get(language, 'controller', 'playing') if not player.paused else player.client.language.get(language, 'controller', 'paused'),
+                     icon_url=music_source_image(player.current.source.lower()))
     embed.title = f"`{trim_text(player.current.title, 24)}`"
     embed.url = player.current.uri
     txt = ""
 
-    txt +=  f"> ⏲️ • {f'Kết thúc sau: <t:{int((player.start_time + timedelta(milliseconds=player.current.length - player.current.position)).timestamp())}:R> ({time_format(player.current.length)})' if not player.paused and not player.current.stream else 'Trực tiếp' if player.current.stream and not player.paused else ''}\n" \
-            f"> 🔈 • Kênh thoại: {player.channel.mention} \n" \
-            f"> 🔊 • Âm lượng: {player.player_volume}%\n"
+    txt +=  f"> ⏲️ • " + player.client.language.get(language, 'controller', 'end').format(time=int((player.start_time + timedelta(milliseconds=player.current.length - player.current.position)).timestamp()),length=time_format(player.current.length)) if not player.paused and not player.current.stream else player.client.language.get(language, 'controller', 'streaming') if player.current.stream and not player.paused else player.client.language.get(language, 'controller', 'paused_time')
+    txt +=  f"> 🔈 • " + player.client.language.get(language, 'controller', 'channel').format(channel=player.channel.mention)
+    txt +=  f"> 🔊 • " + player.client.language.get(language, 'controller', 'volume').format(vol=player.player_volume)
 
     if player.player_endpoint:
         endpoint = player.player_endpoint
@@ -28,35 +29,34 @@ def render_player(self):
         endpoint = "Auto"
 
     if player.ping:
-        txt += f"> 📡 • Độ trễ đến máy chủ discord `{trim_text(endpoint, 20)}`: {player.ping}ms\n"
-    else:
-        txt += f"> 📡 • Độ trễ đến máy chủ discord `{trim_text(endpoint, 20)}`: N/A\n"
+        txt += player.client.language.get(language, 'controller', 'discord_latency').format(endpoint=trim_text(endpoint, 20), ping=player.ping)
 
     match player.nightCore:
         case 0:
             ...
         case 1:
-            txt += f"> 🇳 • Đang bật nightcore \n"
+            txt += player.client.language.get(language, 'controller', 'nightcore_enabled')
 
 
     if player.queue.next_track:
-        txt += f"> 🗒️ • Các bài hát còn lại trong hàng đợi: {player.queue.next_track.__len__()}\n"
+        txt += player.client.language.get(language, 'controller', 'queue_next_track').format(track_left=player.queue.next_track.__len__())
 
     if player.queue.loop:
         if player.queue.loop == LoopMODE.SONG:
-            txt += f"> 🔂 • Đang phát lặp lại bài hát: {trim_text(player.queue.is_playing.title, 5)}\n"
+            txt_ = trim_text(player.queue.is_playing.title, 5)
+            txt += player.client.language.get(language, 'controller', 'queue_loop_song').format(name=txt_)
         elif player.queue.loop == LoopMODE.PLAYLIST:
-            txt += f"> 🔁 • Đang phát lặp lại hàng đợi\n"
+            txt += player.client.language.get(language, 'controller', 'queue_loop_playlist')
 
     if player.is_autoplay_mode:
-        txt += f"> 🔍 • Chế độ tự động thêm bài hát `Bật`\n"
+        txt += player.client.language.get(language, 'controller', 'is_autoplay_mode')
 
     if player.keep_connection:
-        txt += f"> 🔄 • Chế độ phát liên tục: `Bật`\n"
+        txt += player.client.language.get(language, 'controller', 'keep_connection')
 
     embed.description = txt
     embed.set_thumbnail(url=player.current.artwork_url)
-    embed.set_footer(text=f"Máy chủ âm nhạc hiện tại: {player.node.label}", icon_url="https://cdn.discordapp.com/emojis/1140221179920138330.webp?size=128&quality=lossless")
+    embed.set_footer(text=player.client.language.get(language, 'controller', 'music_server').format(host=player.node.label), icon_url="https://cdn.discordapp.com/emojis/1140221179920138330.webp?size=128&quality=lossless")
 
     # Will break if changed
     view = View(timeout=None)

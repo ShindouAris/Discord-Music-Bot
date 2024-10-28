@@ -1,0 +1,17 @@
+{
+  "playing": "Playing",
+  "end": "Ends in <t:{time}:R> ({length})\n",
+  "streaming": "Live\n",
+  "paused": "Paused",
+  "paused_time": "Tạm dừng\n",
+  "channel": "Voice channel: {channel}\n",
+  "volume": "Volume: {vol}%\n",
+  "discord_latency": "> 📡 • Latency to Discord server `{endpoint}`: {ping}ms\n",
+  "nightcore_enabled": "> \uD83C\uDDF3 • Nightcore enabled \n",
+  "queue_next_track": "> ⏩ • Remaining songs in queue: {track_left}\n",
+  "queue_loop_song": "> 🔂 • Repeating song: {name}\n",
+  "queue_loop_playlist": "> 🔁 • Repeating playlist\n",
+  "is_autoplay_mode": "> 🎶 • Autoplay mode: `Enabled`\n",
+  "keep_connection": "> 📶 • Keep playing mode: `Enabled`\n",
+  "music_server": "Current music server: {host}"
+}

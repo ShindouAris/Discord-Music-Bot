@@ -222,6 +222,7 @@ class MusicPlayer(Player[ClientUser]):
     async def controller(self, force_resync: bool = False):
         async with self.locker:
             replace = True
+            lang = await self.client.database.cached_databases.get_language(self.guild.id)
             if self.player_controller is None:
                 replace = False
             elif self.player_controller.created_at.timestamp() + 180 < utils.utcnow().timestamp():
@@ -232,17 +233,17 @@ class MusicPlayer(Player[ClientUser]):
                 replace = False
             try:
                 if replace:
-                    self.player_controller = await self.player_controller.edit(**render_player(self))
+                    self.player_controller = await self.player_controller.edit(**render_player(self, lang))
                 elif force_resync:
                     if self.player_controller is not None:
                         await self.player_controller.delete()
                     if self.NotiChannel is not None:
-                        self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self))
+                        self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self, lang))
                 else:
                     if self.player_controller is not None:
                         await self.player_controller.delete()
                     if self.NotiChannel is not None:    
-                        self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self))
+                        self.player_controller = await self.NotiChannel.send(flags=MessageFlags(suppress_notifications=True), **render_player(self, lang))
             except Exception as e:
                 logger.error(f"Tải trình điều khuyển thất bại: {e}")
                 # self.player_controller = None
