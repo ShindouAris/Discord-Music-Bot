@@ -105,7 +105,7 @@ class ClientUser(AutoShardedBot):
 
     async def on_ready(self):
         await self.change_presence(status=self.status, activity=self.game)
-        await self.database.initialze()
+        self.database.initialze()
         await self.database.build_table()
         logger.info(f"BOT {self.user.name} đã sẵn sàng")
 

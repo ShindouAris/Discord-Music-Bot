@@ -16,15 +16,15 @@ class Cached_Databases:
 
     async def __commit_all__(self):
         while True:
-            await sleep(600)
             count = 0
             for guildID, guildData in self.databases.items():
                 if not guildData["synced"]:
                     await self.database.set_guild(guildID, guildData["language"])
                     guildData["synced"] = True
                     count += 1
-
-            logger.info(f"Đã đồng bộ {count} guilds lên database")
+            if count:
+                logger.info(f"Đã đồng bộ {count} guilds lên database")
+            await sleep(600)
 
     def __init__(self, database):
         self.database = database
@@ -64,7 +64,7 @@ class Local_Database:
         self.connection = None
         self.cached_databases: Optional[Cached_Databases] = None
 
-    async def initialze(self):
+    def initialze(self):
         path = 'databases/'
         if not os.path.exists(path):
             os.makedirs(path)
