@@ -284,7 +284,7 @@ class Music(commands.Cog):
         disabled = self.bot.language.get(lang, 'music', 'disabled')
         if not player.is_autoplay_mode and player.queue.autoplay.__len__() != 0:
             player.queue.autoplay.clear()
-        await inter.edit_original_response(pauseTxT.format(status=activate if player.is_autoplay_mode else disabled),
+        await inter.edit_original_response(pauseTxT.format(status=activate.lower() if player.is_autoplay_mode else disabled.lower()),
                                            flags=MessageFlags(suppress_notifications=True))
 
     @commands.command(name="autoplay", description="Autoplay feature", aliases=["ap"])
@@ -299,7 +299,7 @@ class Music(commands.Cog):
         disabled = self.bot.language.get(lang, 'music', 'disabled')
         if not player.is_autoplay_mode and player.queue.autoplay:
             player.queue.autoplay.clear()
-        await inter.send(pauseTxT.format(status=activate if player.is_autoplay_mode else disabled),
+        await inter.send(pauseTxT.format(status=activate.lower() if player.is_autoplay_mode else disabled.lower()),
                          flags=MessageFlags(suppress_notifications=True))
         await player.controller()
 
@@ -533,7 +533,7 @@ class Music(commands.Cog):
         on = self.bot.language.get(lang, 'music', 'activate')
         off = self.bot.language.get(lang, 'music', 'disabled')
         if player.queue.keep_connect == state:
-            return inter.send(aready_stage.format(stage={on if state == STATE.ON else off}),
+            return inter.send(aready_stage.format(stage={on.lower() if state == STATE.ON else off.lower()}),
                               flags=MessageFlags(suppress_notifications=True))
         response = self.bot.language.get(lang, 'music', 'keep_connected_response')
         player.queue.keep_connect = state
@@ -699,7 +699,7 @@ class Music(commands.Cog):
         await inter.edit_original_response(embed=Embed(description=self.bot.language.get(lang,
                                                                                          'music',
                                                                                          'nightcore_message').format(
-            txt=txt)),
+            txt=txt.lower())),
                                            flags=MessageFlags(suppress_notifications=True))
 
     @commands.Cog.listener("on_track_end")
