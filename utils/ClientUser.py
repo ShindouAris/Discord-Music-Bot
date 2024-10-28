@@ -60,7 +60,7 @@ class ClientUser(AutoShardedBot):
         self.nodeClient = NodePool(self)
         self.logger = logger
         self.loop = get_event_loop()
-        self.loop.create_task(self.loadNode())
+        self.connect_node_task = self.loop.create_task(self.loadNode())
         self.available_nodes: list = []
         self.unavailable_nodes: list = []
         self.status = Status.idle
@@ -83,8 +83,7 @@ class ClientUser(AutoShardedBot):
                             port=node["config"]["port"],
                             host=node["config"]["host"],
                             secure=node["config"]["secure"],
-                            resuming_session_id=session_key,
-                            timeout=5
+                            resuming_session_id=session_key
                         )
                     except Exception as e:
                         logger.error(f"Đã xảy ra sự cố khi kết nối đến máy chủ âm nhạc: {e}")
@@ -108,6 +107,7 @@ class ClientUser(AutoShardedBot):
         self.database.initialze()
         await self.database.build_table()
         logger.info(f"BOT {self.user.name} đã sẵn sàng")
+        await self.connect_node_task
 
     async def close(self):
         logger.warning("Đã nhận tín hiệu ngắt bot và dọn dẹp môi trường")
