@@ -165,3 +165,8 @@ lavalink.json
 api/
 lavalink_session_key.ini
 Lavalink/plugins
+.logs/*
+Lavalink/.logs/*
+databases/guildData.sqlite
+# Debug file
+test.py
