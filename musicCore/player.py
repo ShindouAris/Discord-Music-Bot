@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from asyncio import Lock, sleep
 from traceback import print_exc
 
@@ -37,6 +38,7 @@ class Queue:
         self.loop = LoopMODE.OFF
         self.autoplay: deque = deque(maxlen=25)
         self.keep_connect = STATE.OFF
+        self.shuffle = STATE.OFF
 
     def get_next_track(self):
         return [track for track in self.next_track]
@@ -56,11 +58,16 @@ class Queue:
                 self.next_track.append(track)
             self.played.clear()
 
-        if self.next_track.__len__() != 0:
-            self.is_playing = self.next_track.popleft()
+        if self.next_track:
+            if self.shuffle == STATE.ON:
+                index = random.randrange(0, len(self.next_track))
+                self.is_playing = self.next_track[index]
+                del self.next_track[index]
+            else:
+                self.is_playing = self.next_track.popleft()
             return self.is_playing
 
-        if self.next_track.__len__() == 0 and self.autoplay.__len__() != 0:
+        if not self.next_track and self.autoplay:
             self.is_playing = self.autoplay.popleft()
 
         return self.is_playing

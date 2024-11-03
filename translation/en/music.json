@@ -30,5 +30,6 @@
   "nightcore_message": "### Nightcore feature has been {txt}",
   "queue_end": "👋 The queue has ended. Bot will leave your channel.",
   "track_error": "An error occurred while loading the song: `{track}`\n ```java\n{cause}\n```",
-  "eco_mode_msg": "The player has been disconnect to save system resources."
+  "eco_mode_msg": "The player has been disconnect to save system resources.",
+  "shufflemode": "Shuffle mode has been {state}"
 }

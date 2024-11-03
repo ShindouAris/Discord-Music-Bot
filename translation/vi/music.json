@@ -30,5 +30,6 @@
   "nightcore_message": "### Đã {txt} tính năng nightcore",
   "queue_end": "👋 Danh sách chờ đã hết. Bot sẽ rời khỏi kênh của bạn",
   "track_error": "Đã có lỗi xảy ra khi tải bài hát `{track}`\n ```java\n{cause}\n```",
-  "eco_mode_msg": "Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống"
+  "eco_mode_msg": "Trình phát đã bị tắt để tiết kiệm tài nguyên hệ thống",
+  "shufflemode": "Đã {state} chế độ phát ngẫu nhiên các bài hát trong hàng đợi"
 }

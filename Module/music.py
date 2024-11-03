@@ -698,9 +698,31 @@ class Music(commands.Cog):
 
         await inter.edit_original_response(embed=Embed(description=self.bot.language.get(lang,
                                                                                          'music',
-                                                                                         'nightcore_message').format(
-            txt=txt.lower())),
+                                                                                         'nightcore_message').format(txt=txt.lower())),
                                            flags=MessageFlags(suppress_notifications=True))
+
+
+    @commands.slash_command(name="shuffle", description="Enable shuffle mode")
+    @commands.guild_only()
+    @has_player()
+    @check_voice()
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    async def shuffle(self, inter: ApplicationCommandInteraction):
+        await inter.response.defer()
+        player: MusicPlayer = inter.author.guild.voice_client
+        if not player:
+            raise NoPlayer()
+        lang = await self.bot.database.cached_databases.get_language(inter.guild.id)
+        match player.queue.shuffle:
+            case STATE.ON:
+                player.queue.shuffle = STATE.OFF
+                txt = self.bot.language.get(lang, 'music', 'disabled')
+            case STATE.OFF:
+                player.queue.shuffle = STATE.ON
+                txt = self.bot.language.get(lang, 'music', 'activate')
+            case _:
+                txt = ""
+        await inter.edit_original_response(embed=Embed(description=self.bot.language.get(lang, "music", "shufflemode").format(state=txt.lower())))
 
     @commands.Cog.listener("on_track_end")
     async def handling_track_end(self, event: TrackEndEvent[MusicPlayer]):
