@@ -742,6 +742,8 @@ class Music(commands.Cog):
             return await event.player.stopPlayer()
         if event.player.queue.next_track.__len__() != 0:
             return await event.player.process_next()
+        if event.player.queue.autoplay:
+            return await event.player.process_next()
         await event.player.stopPlayer()
 
     @commands.Cog.listener("on_track_stuck")
