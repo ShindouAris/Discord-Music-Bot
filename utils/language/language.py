@@ -75,21 +75,3 @@ class LocalizationManager:
             If not found
         """
         return self.localizations[locale].get_language_key(categoryKey, key)
-
-
-if __name__ == '__main__':
-    localization_manager = LocalizationManager()
-    localization_manager.load_localizations()
-    try:
-        data = localization_manager.get('vi', 'music', 'no_avalible_next_track')
-        print(data)
-        data = localization_manager.get('vi', 'music', 'previous_track')
-        print(data)
-        data = localization_manager.get('vi', 'music', 'skip_track')
-        print(data)
-        data = localization_manager.get('vi', 'music', 'resumed')
-        print(data)
-        data = localization_manager.get("en", "language", "languageChange")
-        print(data)
-    except KeyError as e:
-        print(e)
