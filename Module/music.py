@@ -160,7 +160,8 @@ class Music(commands.Cog):
         except:
             embed = LOADFAILED
             self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild.id})")
-            await player.stopPlayer()
+            if not begined:
+                await player.stopPlayer()
         try:
             await inter.edit_original_response(embed=embed)
         except ( InteractionNotEditable, AttributeError):
