@@ -181,7 +181,8 @@ class Music(commands.Cog):
                 raise LoadFailed()
         except:
             self.bot.logger.error(f"Đã có lỗi xảy ra khi tìm kiếm bài hát: {search} (ID máy chủ: {inter.guild.id})")
-            await player.stopPlayer()
+            if not begined:
+                await player.stopPlayer()
             raise LoadFailed()
         try:
             await inter.edit_original_response(embed=embed)
