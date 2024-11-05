@@ -747,7 +747,7 @@ class Music(commands.Cog):
     @commands.Cog.listener("on_track_stuck")
     async def handling_track_stuck(self, event: TrackStuckEvent[MusicPlayer]):
         self.bot.logger.warning(
-            f"Bài hát {event.track} đã xảy ra lỗi | GuildID: {event.player.guild.id} | {event.threshold_ms}ms")
+            f"Bài hát {event.track.title} đã xảy ra lỗi | GuildID: {event.player.guild.id} | {event.threshold_ms}ms")
 
     @commands.Cog.listener("on_voice_state_update")
     async def player_eco_mode(self, member: Member, before: VoiceState, after: VoiceState):
