@@ -55,10 +55,24 @@ class LocalizationManager:
                             logger.info(f"Loaded file {filename} for {language_code} language")
 
     def get(self, locale: str, categoryKey: str, key: str) -> str | None:
-        """Lấy key bản dịch
+        r"""Lấy key bản dịch
 
-        :returns str | None nếu key không tìm thấy
+        Parameters
+        ---------
+        locale:
+            language codename
+        categoryKey:
+            the category name
+        key:
+            key language
 
+        Returns
+        --------
+
+        :class:`str`
+            Return a language data
+        None
+            If not found
         """
         return self.localizations[locale].get_language_key(categoryKey, key)
 
