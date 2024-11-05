@@ -112,6 +112,8 @@ class ClientUser(AutoShardedBot):
     async def close(self):
         logger.warning("Đã nhận tín hiệu ngắt bot và dọn dẹp môi trường")
         await self.database.cached_databases.close()
+        logger.info("Đang đóng các node client")
+        await self.nodeClient.close()
         return await super().close()
 
     def load_modules(self):
