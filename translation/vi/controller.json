@@ -13,5 +13,6 @@
   "queue_loop_playlist": "> \uD83D\uDD01 • Đang phát lặp lại hàng đợi\n",
   "is_autoplay_mode": "> 🎶 • Chế độ tự động thêm bài hát: `Bật`\n",
   "keep_connection": "> 📶 • Chế độ phát liên tục: `Bật`\n",
-  "music_server": "Máy chủ âm nhạc hiện tại: {host}"
+  "music_server": "Máy chủ âm nhạc hiện tại: {host}",
+  "shuffle": "> 🔀 • Trộn bài hát `bật`"
 }

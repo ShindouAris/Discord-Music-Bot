@@ -54,6 +54,9 @@ def render_player(self, language: str = 'vi'):
     if player.keep_connection:
         txt += player.client.language.get(language, 'controller', 'keep_connection')
 
+    if player.queue.shuffle:
+        txt += player.client.language.get(language, 'controller', 'shuffle')
+
     embed.description = txt
     embed.set_thumbnail(url=player.current.artwork_url)
     embed.set_footer(text=player.client.language.get(language, 'controller', 'music_server').format(host=player.node.label), icon_url="https://cdn.discordapp.com/emojis/1140221179920138330.webp?size=128&quality=lossless")

@@ -13,5 +13,6 @@
   "queue_loop_playlist": "> 🔁 • Repeating playlist\n",
   "is_autoplay_mode": "> 🎶 • Autoplay mode: `Enabled`\n",
   "keep_connection": "> 📶 • Keep playing mode: `Enabled`\n",
-  "music_server": "Current music server: {host}"
+  "music_server": "Current music server: {host}",
+  "shuffle": "> 🔀 • Shuffle on\n"
 }
