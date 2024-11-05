@@ -189,7 +189,7 @@ class MusicPlayer(Player[ClientUser]):
         await self.play(track, replace=True)
         await self.controller()
     
-    async def stopPlayer(self):
+    async def stopPlayer(self, isButton: bool = False):
         try:
             await self.stop()
         except PlayerNotConnected:
@@ -200,7 +200,10 @@ class MusicPlayer(Player[ClientUser]):
             self.queue.next_track.clear()
             self.queue.is_playing = None
             await self.disconnect(force=True)
-            await self.destroy_player_controller()
+            if not isButton:
+                await self.destroy_player_controller()
+            else:
+                await self.endPlayer()
             self.client.dispatch("player_disconnected")
             self.client.logger.info(f"Trình phát được ngắt kết nối khỏi máy chủ: {self.guild.id}")
 
@@ -386,6 +389,16 @@ class MusicPlayer(Player[ClientUser]):
                 self.player_controller = await self.player_controller.delete()
             except:
                 self.player_controller = None
+        self.update_controller_task.cancel()
+
+    async def endPlayer(self):
+        async with self.locker:
+            if self.player_controller is None:
+                return
+            try:
+                await self.player_controller.edit(embed = Embed(description="### 🛑 Trình phát đã được tắt"), view=None)
+            except:
+                return await self.destroy_player_controller()
         self.update_controller_task.cancel()
 
 class QueueInterface(ui.View):

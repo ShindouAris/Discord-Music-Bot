@@ -809,7 +809,7 @@ class Music(commands.Cog):
             case "player_controller_prev_track_btn":
                 await player.playprevious()
             case "player_controller_stop_btn":
-                await player.stopPlayer()
+                await player.stopPlayer(isButton=True)
             case "player_controller_next_track_btn":
                 await player.process_next()
             case _:
