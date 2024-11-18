@@ -3,7 +3,7 @@ from typing import Union
 from re import compile
 from utils.language.preload import language as loc
 YOUTUBE_VIDEO_REG = compile(r"(https?://)?(www\.)?youtube\.(com|nl)/watch\?v=([-\w]+)")
-URLREGEX = compile(r'^https?://[^\s/$.?#].\S*$')
+URLREGEX = compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
 replaces = [
     ('&quot;', '"'),

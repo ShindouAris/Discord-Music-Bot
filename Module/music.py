@@ -17,7 +17,7 @@ from utils.conv import trim_text, time_format, string_to_seconds, percentage, mu
 from re import match
 from utils.error import GenericError, NoPlayer, DiffVoice, YoutubeSourceDisabled, NoLavalinkServerAvailable, \
     LoadFailed, NotSeakable, InvaidINLiveStream, Invaid_SeekValue
-
+from utils.database.user_playlist import DB
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -72,8 +72,11 @@ class Music(commands.Cog):
             else:
                 search_type = SearchType.YOUTUBE
 
+        user_lastplayed = None
+        query = search.strip("<>")
+        urls = URLREGEX.findall(query)
         try:
-            result = await player.fetch_tracks(search, search_type=search_type)
+            result = await player.fetch_tracks(urls[0] ,search_type=search_type)
 
             if isinstance(result, Playlist):
                 language = await self.bot.database.cached_databases.get_language(guildID=inter.guild.id)
@@ -117,6 +120,10 @@ class Music(commands.Cog):
                     return
 
                 if view.select == "playlist":
+                    user_lastplayed = {
+                        "name": result.name,
+                        "url": search
+                    }
 
                     total_time = 0
                     for track in result.tracks:
@@ -141,6 +148,10 @@ class Music(commands.Cog):
                                        flags=MessageFlags(suppress_notifications=True))  # noqa
                 else:
                     track: Track = result.tracks[0]
+                    user_lastplayed = {
+                        "name": track.title,
+                        "url": track.uri
+                    }
                     player.queue.add_next_track(track)
                     embed = Embed(
                         title=trim_text(track.title, 32),
@@ -163,6 +174,10 @@ class Music(commands.Cog):
 
             elif isinstance(result, list):
                 track: Track = result[0]
+                user_lastplayed = {
+                    "name": track.title,
+                    "url": track.uri
+                }
                 player.queue.add_next_track(track)
                 embed = Embed(
                     title=trim_text(track.title, 32),
@@ -195,12 +210,33 @@ class Music(commands.Cog):
                 except Forbidden:
                     pass
 
+
+        if user_lastplayed is not None:
+            await self.bot.userData.add_last_played(inter.author.id, user_lastplayed, DB.users)
+
+
         if not begined:
             await player.process_next()
             player.update_controller_task = self.bot.loop.create_task(player.update_controller())
             self.bot.logger.info(f"Trình phát được khởi tạo tại máy chủ {inter.guild.id}")
         else:
             await player.controller()
+
+    @play.autocomplete("search")
+    async def last_play_autocomplete(self, inter: Interaction, query: str):
+
+        if query:
+            return [query]
+
+        search = []
+        user_data = await self.bot.userData.get_played_tracks(inter.author.id, db=DB.users)
+
+        if user_data:
+            for track in user_data:
+                search.append(f"{track['url']} | {track['name']}"[:100]if len(track['url']) < 101 else track['name'][:100])
+        self.bot.logger.info(search)
+        if search:
+            return search
 
     @play.autocomplete("source")
     async def source_autocomplete(self, inter: Interaction, query: str):  # noqa

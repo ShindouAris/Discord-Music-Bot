@@ -7,3 +7,5 @@ humanize
 aiohttp
 mafic
 aiosqlite
+motor[srv]
+pymongo==4.6.0

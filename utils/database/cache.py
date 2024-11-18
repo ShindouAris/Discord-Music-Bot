@@ -14,6 +14,9 @@ class LRUCacheNode:
         self.prev_key: Optional[object] = None
         self.next_key: Optional[object] = None
 
+    def __getitem__(self, item):
+        pass
+
 class LRUCache:
     __slots__ = "capacity", "expire_seconds", "cache", "head_key", "tail_key"
 

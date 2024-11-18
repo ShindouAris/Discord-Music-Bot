@@ -10,11 +10,6 @@ logger = getLogger(__name__)
 class Database_template(TypedDict):
     language: str
     synced: bool
-#
-# class UserPlaylistTemplate(TypedDict):
-#     userid: int
-#     playlistname: str
-#     playlistdata: list
 
 class Cached_Databases:
     databases: dict[int, Database_template] = {}
@@ -135,27 +130,3 @@ class Local_Database:
             await cursor.execute("""UPDATE guilds SET language=? WHERE guildID=?""", (language, guildID,))
             await cursor.commit()
             await cursor.close()
-
-# class UserPlaylistCached:
-#     def __init__(self, database):
-#         self.database = database
-#
-# class UserPlaylistDatabase:
-#     def __init__(self):
-#         self.cache: Optional[UserPlaylistCached] = None
-#
-#     def initialze(self):
-#         self.cache = UserPlaylistCached(self)
-#
-#     @staticmethod
-#     async def build_table():
-#         async with aiosqlite.connect("databases/userPlaylistData.sqlite") as db:
-#             await db.execute("""
-#             CREATE TABLE IF NOT EXISTS userPlaylists(
-#                                 userid INTEGER PRIMARY KEY,
-#                                 playlistname TEXT,
-#                                 playlistdata BLOB NOT NULL
-#             )
-#             """)
-#             await db.commit()
-#             await db.close()

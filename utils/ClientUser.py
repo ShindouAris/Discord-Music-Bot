@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import get_event_loop
 from json import load
 
-from os import environ, path, walk
+from os import environ, path, walk, getenv
 from disnake import Status, utils, Intents, Activity, ActivityType
 from disnake.ext.commands import AutoShardedBot, ExtensionNotLoaded, ExtensionAlreadyLoaded, CommandSyncFlags
 from dotenv import load_dotenv
@@ -13,6 +13,7 @@ from mafic import NodePool, Node
 from typing import TypedDict, List, Optional, TYPE_CHECKING
 from utils.language.preload import language
 from utils.database.database import Local_Database
+from utils.database.user_playlist import UserData
 
 if TYPE_CHECKING:
     from utils.language.language import LocalizationManager
@@ -67,6 +68,8 @@ class ClientUser(AutoShardedBot):
         self.game = Activity(name=environ.get("PRESENCE"), type=ActivityType.listening)
         self.language: Optional[LocalizationManager] = language
         self.database = Local_Database()
+        self.userData: Optional[UserData] = None
+
 
     async def loadNode(self):
             try:
@@ -168,6 +171,7 @@ def load():
     bot  = ClientUser(intents=intents, command_prefix=environ.get("PREFIX") or "?", command_sync_flag=command_sync_config)
 
     bot.load_modules()
+    bot.userData = UserData(getenv("MONGO", None))
     print("-"*40)
 
     try:
