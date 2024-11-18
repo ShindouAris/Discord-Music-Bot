@@ -396,7 +396,7 @@ class MusicPlayer(Player[ClientUser]):
             if self.player_controller is None:
                 return
             try:
-                await self.player_controller.edit(embed = Embed(description="### 🛑 Trình phát đã được tắt"), view=None)
+                await self.player_controller.edit(embed = Embed(description="### 🛑 Stopped"), view=None)
             except:
                 return await self.destroy_player_controller()
         self.update_controller_task.cancel()
