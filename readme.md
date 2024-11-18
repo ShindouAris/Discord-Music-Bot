@@ -8,7 +8,7 @@
 ---
 1. CLONE REPO NÀY VỀ
 ```
-git clone -b Multi_language+database-support https://github.com/ShindouAris/ArisMusicBot.git
+git clone -b Muti_language+database-support https://github.com/ShindouAris/ArisMusicBot.git
 ```
 2. Cài đặt requirements
 ```
